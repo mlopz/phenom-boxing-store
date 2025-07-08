@@ -1,0 +1,141 @@
+{
+  "categories": [
+    {
+      "id": "guantes",
+      "name": "Guantes de Boxeo",
+      "description": "Guantes profesionales para entrenamiento y competencia",
+      "image": "https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=400&h=400&fit=crop&crop=center"
+    },
+    {
+      "id": "sacos",
+      "name": "Sacos de Entrenamiento",
+      "description": "Sacos pesados y de velocidad para tu entrenamiento",
+      "image": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop&crop=center"
+    },
+    {
+      "id": "protecciones",
+      "name": "Protecciones",
+      "description": "Cascos, bucales y protecciones corporales",
+      "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop&crop=center"
+    },
+    {
+      "id": "accesorios",
+      "name": "Accesorios",
+      "description": "Vendas, cuerdas y accesorios de entrenamiento",
+      "image": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop&crop=center"
+    },
+    {
+      "id": "ropa",
+      "name": "Ropa Deportiva",
+      "description": "Shorts, camisetas y ropa de entrenamiento",
+      "image": "https://images.unsplash.com/photo-1506629905607-d9f02a6a0e7b?w=400&h=400&fit=crop&crop=center"
+    }
+  ],
+  "products": [
+    {
+      "id": 1,
+      "name": "Guantes Phenom Pro",
+      "category": "guantes",
+      "price": 89.99,
+      "image": "https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=400&h=400&fit=crop",
+      "description": "Guantes profesionales de cuero genuino con relleno de espuma de alta densidad. Perfectos para entrenamiento intensivo.",
+      "features": ["Cuero genuino", "Relleno de espuma", "Velcro ajustable", "Ventilación mejorada"],
+      "sizes": ["8 oz", "10 oz", "12 oz", "14 oz", "16 oz"],
+      "inStock": true
+    },
+    {
+      "id": 2,
+      "name": "Guantes Sparring Elite",
+      "category": "guantes",
+      "price": 129.99,
+      "image": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop",
+      "description": "Guantes de sparring con protección extra para entrenamientos seguros y competencias.",
+      "features": ["Protección extra", "Diseño ergonómico", "Correa de muñeca", "Material transpirable"],
+      "sizes": ["10 oz", "12 oz", "14 oz", "16 oz"],
+      "inStock": true
+    },
+    {
+      "id": 3,
+      "name": "Saco Pesado Phenom 100lbs",
+      "category": "sacos",
+      "price": 199.99,
+      "image": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop",
+      "description": "Saco pesado de 100 libras con relleno de arena y tela. Ideal para desarrollar potencia.",
+      "features": ["100 libras", "Relleno de arena", "Cadenas incluidas", "Cuero sintético"],
+      "inStock": true
+    },
+    {
+      "id": 4,
+      "name": "Saco de Velocidad Pro",
+      "category": "sacos",
+      "price": 79.99,
+      "image": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop",
+      "description": "Saco de velocidad para mejorar coordinación y precisión en tus golpes.",
+      "features": ["Ajustable en altura", "Base estable", "Rebote rápido", "Fácil instalación"],
+      "inStock": true
+    },
+    {
+      "id": 5,
+      "name": "Casco Protector Elite",
+      "category": "protecciones",
+      "price": 149.99,
+      "image": "https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=400&h=400&fit=crop",
+      "description": "Casco de protección con visibilidad completa y amortiguación superior.",
+      "features": ["Visión completa", "Amortiguación gel", "Ajuste personalizable", "Ventilación"],
+      "sizes": ["S", "M", "L", "XL"],
+      "inStock": true
+    },
+    {
+      "id": 6,
+      "name": "Bucal Profesional",
+      "category": "protecciones",
+      "price": 29.99,
+      "image": "https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=400&h=400&fit=crop",
+      "description": "Protector bucal moldeable para máxima protección dental.",
+      "features": ["Moldeable", "Respiración fácil", "Sabor neutro", "Estuche incluido"],
+      "inStock": true
+    },
+    {
+      "id": 7,
+      "name": "Vendas Elásticas Pro",
+      "category": "accesorios",
+      "price": 19.99,
+      "image": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop",
+      "description": "Vendas elásticas de 4.5 metros para protección de muñecas y manos.",
+      "features": ["4.5 metros", "Material elástico", "Velcro resistente", "Pack de 2"],
+      "inStock": true
+    },
+    {
+      "id": 8,
+      "name": "Cuerda de Saltar Pro",
+      "category": "accesorios",
+      "price": 34.99,
+      "image": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop",
+      "description": "Cuerda de saltar con cable de acero y mangos ergonómicos.",
+      "features": ["Cable de acero", "Mangos ergonómicos", "Ajustable", "Rodamientos de bolas"],
+      "inStock": true
+    },
+    {
+      "id": 9,
+      "name": "Shorts Phenom Fighter",
+      "category": "ropa",
+      "price": 49.99,
+      "image": "https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=400&h=400&fit=crop",
+      "description": "Shorts de entrenamiento con tecnología de secado rápido.",
+      "features": ["Secado rápido", "Elástico en cintura", "Bolsillos laterales", "Logo bordado"],
+      "sizes": ["S", "M", "L", "XL", "XXL"],
+      "inStock": true
+    },
+    {
+      "id": 10,
+      "name": "Camiseta Phenom Training",
+      "category": "ropa",
+      "price": 39.99,
+      "image": "https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=400&h=400&fit=crop",
+      "description": "Camiseta técnica con tecnología anti-sudor para entrenamientos intensos.",
+      "features": ["Anti-sudor", "Corte atlético", "Costuras planas", "Logo reflectivo"],
+      "sizes": ["XS", "S", "M", "L", "XL", "XXL"],
+      "inStock": true
+    }
+  ]
+}
