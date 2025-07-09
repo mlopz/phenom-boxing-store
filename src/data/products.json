@@ -41,6 +41,13 @@
       "description": "Guantes profesionales de cuero genuino con relleno de espuma de alta densidad. Perfectos para entrenamiento intensivo.",
       "features": ["Cuero genuino", "Relleno de espuma", "Velcro ajustable", "Ventilación mejorada"],
       "sizes": ["8 oz", "10 oz", "12 oz", "14 oz", "16 oz"],
+      "sizeStock": {
+        "8 oz": 5,
+        "10 oz": 0,
+        "12 oz": 3,
+        "14 oz": 0,
+        "16 oz": 2
+      },
       "inStock": true
     },
     {

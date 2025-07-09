@@ -7,6 +7,7 @@ import {
   doc, 
   getDoc, 
   addDoc, 
+  setDoc,
   updateDoc, 
   deleteDoc,
   query,
@@ -261,11 +262,21 @@ export const getCategories = async () => {
 
 export const addCategory = async (categoryData) => {
   try {
-    const categoriesRef = collection(db, 'categories');
-    const docRef = await addDoc(categoriesRef, categoryData);
-    return docRef.id;
+    console.log('➕ [Firebase] Agregando categoría con ID personalizado:', categoryData.id);
+    
+    // Usar setDoc con ID personalizado en lugar de addDoc
+    const categoryRef = doc(db, 'categories', categoryData.id);
+    const { id, ...dataWithoutId } = categoryData;
+    
+    await setDoc(categoryRef, {
+      ...dataWithoutId,
+      id: categoryData.id // Mantener el ID en los datos también
+    });
+    
+    console.log('✅ [Firebase] Categoría agregada exitosamente:', categoryData.id);
+    return categoryData.id;
   } catch (error) {
-    console.error('Error agregando categoría:', error);
+    console.error('❌ [Firebase] Error agregando categoría:', error);
     throw error;
   }
 };

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { CartProvider } from './context/CartContext';
+import { CartProvider, useCart } from './context/CartContext';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Categories from './components/Categories';
 import ProductGrid from './components/ProductGrid';
 import Cart from './components/Cart';
+import CheckoutModal from './components/CheckoutModal';
 import Checkout from './components/Checkout';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
@@ -12,13 +13,16 @@ import AdminPanel from './components/AdminPanel';
 import WhatsAppButton from './components/WhatsAppButton';
 import CatalogLoader from './components/CatalogLoader';
 
-function App() {
+// Componente interno con acceso al contexto del carrito
+function AppContent() {
+  const { items, getCartTotal } = useCart();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [showCatalogLoader, setShowCatalogLoader] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [orderData, setOrderData] = useState(null);
 
   const handleCartClick = () => {
     setIsCartOpen(true);
@@ -35,6 +39,65 @@ function App() {
 
   const handleCheckoutClose = () => {
     setIsCheckoutOpen(false);
+    setOrderData(null);
+  };
+
+  const handleConfirmOrder = (orderData) => {
+    console.log('🛒 [Checkout] Datos del pedido confirmados:', orderData);
+    setOrderData(orderData);
+    setIsCheckoutOpen(false);
+    
+    // Aquí se procesará el pago con MercadoPago
+    // Por ahora, redirigimos al checkout de MercadoPago con los datos del pedido
+    handleMercadoPagoCheckout(orderData);
+  };
+
+  const handleMercadoPagoCheckout = async (orderData) => {
+    try {
+      console.log('💳 [MercadoPago] Iniciando proceso de pago...');
+      
+      // Calcular total con envío si es necesario
+      const baseTotal = getCartTotal();
+      const shippingCost = orderData.deliveryType === 'flex' ? 200 : 0;
+      const finalTotal = baseTotal + shippingCost;
+      
+      // Preparar datos para MercadoPago
+      const paymentData = {
+        items: orderData.items.map(item => ({
+          title: `${item.name}${item.selectedSize ? ` (${item.selectedSize})` : ''}`,
+          quantity: item.quantity,
+          unit_price: item.price
+        })),
+        deliveryInfo: {
+          type: orderData.deliveryType,
+          customer: orderData.customer,
+          shippingCost: shippingCost
+        },
+        total: finalTotal
+      };
+      
+      console.log('💳 [MercadoPago] Datos de pago:', paymentData);
+      
+      // Llamar al endpoint de MercadoPago (esto se implementará en el backend)
+      const response = await fetch('/api/create-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentData)
+      });
+      
+      if (response.ok) {
+        const { init_point } = await response.json();
+        window.location.href = init_point;
+      } else {
+        console.error('❌ [MercadoPago] Error al crear la preferencia de pago');
+        alert('Error al procesar el pago. Por favor, inténtalo nuevamente.');
+      }
+    } catch (error) {
+      console.error('❌ [MercadoPago] Error:', error);
+      alert('Error al procesar el pago. Por favor, inténtalo nuevamente.');
+    }
   };
 
   const handleShopClick = () => {
@@ -63,6 +126,38 @@ function App() {
     setShowAdminPanel(false);
   };
 
+  const handleMercadoLibreAuth = async (code) => {
+    try {
+      console.log('🔐 [MercadoLibre Auth] Procesando código de autorización...');
+      
+      // Aquí intercambiaremos el código por un Access Token
+      const response = await fetch('/api/mercadolibre/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code })
+      });
+      
+      if (response.ok) {
+        const { access_token } = await response.json();
+        console.log('✅ [MercadoLibre Auth] Token obtenido exitosamente');
+        
+        // Guardar el token (por ahora en localStorage, luego en Firebase)
+        localStorage.setItem('mercadolibre_token', access_token);
+        
+        // Mostrar mensaje de éxito
+        alert('¡Autenticación con MercadoLibre exitosa! Ya puedes sincronizar productos.');
+      } else {
+        console.error('❌ [MercadoLibre Auth] Error al obtener token');
+        alert('Error en la autenticación con MercadoLibre. Inténtalo nuevamente.');
+      }
+    } catch (error) {
+      console.error('❌ [MercadoLibre Auth] Error:', error);
+      alert('Error en la autenticación con MercadoLibre. Inténtalo nuevamente.');
+    }
+  };
+
   // Detectar si la URL contiene /admin, /catalog-loader o parámetros de pago
   React.useEffect(() => {
     if (window.location.pathname.includes('/admin') || window.location.hash.includes('admin')) {
@@ -83,6 +178,16 @@ function App() {
         window.history.replaceState({}, document.title, window.location.pathname);
         setPaymentStatus(null);
       }, 5000);
+    }
+    
+    // Detectar callback de autenticación de MercadoLibre
+    const authParam = urlParams.get('auth');
+    const code = urlParams.get('code');
+    if (authParam === 'mercadolibre' && code) {
+      console.log('🔐 [MercadoLibre Auth] Código de autorización recibido:', code);
+      handleMercadoLibreAuth(code);
+      // Limpiar la URL
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
 
@@ -152,41 +257,51 @@ function App() {
   };
 
   return (
+    <div className="min-h-screen bg-phenom-black">
+      <Header onCartClick={handleCartClick} onAdminClick={handleAdminAccess} />
+      
+      {/* Mensaje de estado del pago */}
+      <PaymentStatusMessage />
+      
+      <main>
+        <Hero onShopClick={handleShopClick} />
+        <Categories onCategoryClick={handleCategoryClick} />
+        <ProductGrid 
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+        />
+        <Contact />
+      </main>
+
+      <Footer />
+
+      {/* Cart Sidebar */}
+      <Cart 
+        isOpen={isCartOpen} 
+        onClose={handleCartClose}
+        onCheckout={handleCheckout}
+      />
+
+      {/* Checkout Modal */}
+      <CheckoutModal 
+        isOpen={isCheckoutOpen}
+        onClose={handleCheckoutClose}
+        cartItems={items}
+        cartTotal={getCartTotal()}
+        onConfirmOrder={handleConfirmOrder}
+      />
+      
+      {/* WhatsApp Floating Button */}
+      <WhatsAppButton />
+    </div>
+  );
+}
+
+// Componente principal App
+function App() {
+  return (
     <CartProvider>
-      <div className="min-h-screen bg-phenom-black">
-        <Header onCartClick={handleCartClick} onAdminClick={handleAdminAccess} />
-        
-        {/* Mensaje de estado del pago */}
-        <PaymentStatusMessage />
-        
-        <main>
-          <Hero onShopClick={handleShopClick} />
-          <Categories onCategoryClick={handleCategoryClick} />
-          <ProductGrid 
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
-          />
-          <Contact />
-        </main>
-
-        <Footer />
-
-        {/* Cart Sidebar */}
-        <Cart 
-          isOpen={isCartOpen} 
-          onClose={handleCartClose}
-          onCheckout={handleCheckout}
-        />
-
-        {/* Checkout Modal */}
-        <Checkout 
-          isOpen={isCheckoutOpen}
-          onClose={handleCheckoutClose}
-        />
-        
-        {/* WhatsApp Floating Button */}
-        <WhatsAppButton />
-      </div>
+      <AppContent />
     </CartProvider>
   );
 }

@@ -135,6 +135,93 @@ app.post('/api/create-preference', async (req, res) => {
   }
 });
 
+// Endpoint para autenticación OAuth de MercadoLibre
+app.post('/api/mercadolibre/auth', async (req, res) => {
+  try {
+    const { code } = req.body;
+    
+    if (!code) {
+      return res.status(400).json({ error: 'Código de autorización requerido' });
+    }
+    
+    // Credenciales de la aplicación (estas las obtendrás de MercadoLibre)
+    const clientId = process.env.MERCADOLIBRE_CLIENT_ID;
+    const clientSecret = process.env.MERCADOLIBRE_CLIENT_SECRET;
+    const redirectUri = process.env.MERCADOLIBRE_REDIRECT_URI || 'http://localhost:3006/?auth=mercadolibre';
+    
+    if (!clientId || !clientSecret) {
+      return res.status(500).json({ 
+        error: 'Credenciales de MercadoLibre no configuradas',
+        message: 'Verifica MERCADOLIBRE_CLIENT_ID y MERCADOLIBRE_CLIENT_SECRET'
+      });
+    }
+    
+    console.log('🔐 [MercadoLibre Auth] Intercambiando código por token...');
+    
+    // Intercambiar código por Access Token
+    const tokenResponse = await fetch('https://api.mercadolibre.com/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json'
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: clientId,
+        client_secret: clientSecret,
+        code: code,
+        redirect_uri: redirectUri
+      })
+    });
+    
+    const tokenData = await tokenResponse.json();
+    
+    if (!tokenResponse.ok) {
+      console.error('❌ [MercadoLibre Auth] Error al obtener token:', tokenData);
+      return res.status(tokenResponse.status).json({ 
+        error: 'Error al obtener Access Token',
+        details: tokenData
+      });
+    }
+    
+    console.log('✅ [MercadoLibre Auth] Token obtenido exitosamente');
+    
+    // Obtener información del usuario para validar
+    const userResponse = await fetch('https://api.mercadolibre.com/users/me', {
+      headers: {
+        'Authorization': `Bearer ${tokenData.access_token}`
+      }
+    });
+    
+    const userData = await userResponse.json();
+    
+    if (userResponse.ok) {
+      console.log('👤 [MercadoLibre Auth] Usuario autenticado:', userData.nickname);
+    }
+    
+    // Retornar el token y información relevante
+    res.json({
+      access_token: tokenData.access_token,
+      refresh_token: tokenData.refresh_token,
+      expires_in: tokenData.expires_in,
+      user_id: tokenData.user_id,
+      user_info: userResponse.ok ? {
+        id: userData.id,
+        nickname: userData.nickname,
+        email: userData.email,
+        site_id: userData.site_id
+      } : null
+    });
+    
+  } catch (error) {
+    console.error('❌ [MercadoLibre Auth] Error:', error);
+    res.status(500).json({ 
+      error: 'Error interno del servidor',
+      message: error.message
+    });
+  }
+});
+
 // Endpoint de salud
 app.get('/api/health', (req, res) => {
   res.json({ 

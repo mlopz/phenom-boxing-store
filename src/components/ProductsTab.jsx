@@ -180,6 +180,7 @@ const ProductForm = ({ product, categories, onSave, onCancel, showNotification }
     description: product.description || '',
     features: Array.isArray(product.features) ? product.features.join(', ') : '',
     sizes: product.sizes || [],
+    sizeStock: product.sizeStock || {},
     inStock: product.inStock !== undefined ? product.inStock : true
   });
   
@@ -190,17 +191,20 @@ const ProductForm = ({ product, categories, onSave, onCancel, showNotification }
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log('🔍 [DEBUG] handleSubmit ejecutado');
+    console.log('🔍 [DEBUG] product.id:', product.id);
     console.log('🔍 [DEBUG] formData.images:', formData.images);
     console.log('🔍 [DEBUG] formData.images.length:', formData.images.length);
     
     const productData = {
       ...formData,
+      id: product.id, // ✅ CRÍTICO: Preservar el ID para edición
       features: formData.features.split(',').map(f => f.trim()).filter(f => f),
       image: formData.images[0] || '', // Mantener compatibilidad con imagen principal
       images: formData.images // Nueva propiedad para múltiples imágenes
     };
     
     console.log('🔍 [DEBUG] productData creado:', productData);
+    console.log('🔍 [DEBUG] productData.id:', productData.id);
     console.log('🔍 [DEBUG] productData.images:', productData.images);
     console.log('🔍 [DEBUG] Llamando onSave...');
     
@@ -270,6 +274,10 @@ const ProductForm = ({ product, categories, onSave, onCancel, showNotification }
       if (!formData.sizes.includes(trimmedSize)) {
         const newSizes = [...formData.sizes, trimmedSize];
         handleChange('sizes', newSizes);
+        
+        // Inicializar stock para el nuevo talle
+        initializeSizeStock(trimmedSize);
+        
         console.log('Talle agregado:', trimmedSize, 'Lista actual:', newSizes);
         
         // Mostrar notificación de éxito
@@ -298,9 +306,34 @@ const ProductForm = ({ product, categories, onSave, onCancel, showNotification }
     const newSizes = formData.sizes.filter(size => size !== sizeToRemove);
     handleChange('sizes', newSizes);
     
+    // También eliminar el stock de ese talle
+    const newSizeStock = { ...formData.sizeStock };
+    delete newSizeStock[sizeToRemove];
+    handleChange('sizeStock', newSizeStock);
+    
     // Mostrar notificación de éxito
     if (showNotification) {
       showNotification(`Talle "${sizeToRemove}" eliminado correctamente`, 'success');
+    }
+  };
+
+  // Función para actualizar el stock de un talle específico
+  const handleSizeStockChange = (size, stock) => {
+    const newSizeStock = {
+      ...formData.sizeStock,
+      [size]: parseInt(stock) || 0
+    };
+    handleChange('sizeStock', newSizeStock);
+  };
+
+  // Función para inicializar stock cuando se agrega un nuevo talle
+  const initializeSizeStock = (size) => {
+    if (!formData.sizeStock[size]) {
+      const newSizeStock = {
+        ...formData.sizeStock,
+        [size]: 0
+      };
+      handleChange('sizeStock', newSizeStock);
     }
   };
 
@@ -532,6 +565,52 @@ const ProductForm = ({ product, categories, onSave, onCancel, showNotification }
               </p>
             </div>
 
+            {/* Gestión de Stock por Talle */}
+            {formData.sizes.length > 0 && (
+              <div>
+                <label className="block text-gray-300 text-sm font-medium mb-2">
+                  📦 Stock por Talle
+                </label>
+                <div className="bg-gray-800 rounded-lg p-4 border border-gray-600">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {formData.sizes.map((size) => {
+                      const currentStock = formData.sizeStock[size] || 0;
+                      const isOutOfStock = currentStock === 0;
+                      return (
+                        <div key={size} className="flex items-center justify-between bg-gray-700 rounded-lg p-3">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-white font-medium">{size}</span>
+                            {isOutOfStock && (
+                              <span className="text-xs bg-red-600 text-white px-2 py-1 rounded">
+                                Agotado
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-gray-400 text-sm">Stock:</span>
+                            <input
+                              type="number"
+                              min="0"
+                              value={currentStock}
+                              onChange={(e) => handleSizeStockChange(size, e.target.value)}
+                              className="w-16 px-2 py-1 bg-gray-600 border border-gray-500 rounded text-white text-center focus:outline-none focus:border-phenom-red"
+                              placeholder="0"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-3 p-3 bg-gray-900 rounded-lg">
+                    <p className="text-gray-400 text-xs">
+                      💡 <strong>Stock por talle:</strong> Configura cuántas unidades tienes disponibles de cada talle. 
+                      Si pones 0, ese talle aparecerá como "Agotado" en la tienda.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="flex items-center space-x-2">
                 <input
@@ -542,6 +621,9 @@ const ProductForm = ({ product, categories, onSave, onCancel, showNotification }
                 />
                 <span className="text-gray-300">Producto en stock</span>
               </label>
+              <p className="text-gray-400 text-xs mt-1">
+                💡 Si el producto tiene talles, el stock se maneja individualmente por talle arriba.
+              </p>
             </div>
           </div>
 

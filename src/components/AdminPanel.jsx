@@ -194,39 +194,84 @@ const AdminPanel = ({ onBack }) => {
   const handleSaveCategory = async (category) => {
     setLoading(true);
     try {
-      if (category.id) {
+      // Verificar si la categoría ya existe en la lista actual (edición)
+      const existingCategory = categories.find(c => c.id === category.id);
+      
+      if (existingCategory) {
         // Editar categoría existente
+        console.log('🔄 [Admin] Editando categoría existente:', category.id);
         await updateCategory(category.id, category);
         const updatedCategories = categories.map(c => c.id === category.id ? category : c);
         setCategories(updatedCategories);
         showNotification('Categoría actualizada correctamente', 'success');
       } else {
-        // Agregar nueva categoría
-        const newCategoryId = await addCategory(category);
-        const newCategory = { ...category, id: newCategoryId };
+        // Agregar nueva categoría (usar el ID personalizado del formulario)
+        console.log('➕ [Admin] Creando nueva categoría:', category.id);
+        
+        // Para nuevas categorías, usar el ID personalizado del formulario
+        const categoryData = {
+          id: category.id,
+          name: category.name,
+          description: category.description
+        };
+        
+        await addCategory(categoryData);
+        const newCategory = { ...categoryData };
         setCategories([...categories, newCategory]);
         showNotification('Categoría agregada correctamente', 'success');
       }
       setEditingCategory(null);
     } catch (error) {
       console.error('Error guardando categoría:', error);
-      showNotification('Error al guardar categoría', 'error');
+      showNotification('Error al guardar categoría: ' + error.message, 'error');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteCategory = async (categoryId) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar esta categoría?')) {
+    // Verificar cuántos productos tienen esta categoría
+    const affectedProducts = products.filter(p => p.category === categoryId);
+    const confirmMessage = affectedProducts.length > 0 
+      ? `¿Estás seguro de que quieres eliminar esta categoría?\n\n${affectedProducts.length} producto(s) quedarán como "Sin categoría".`
+      : '¿Estás seguro de que quieres eliminar esta categoría?';
+    
+    if (window.confirm(confirmMessage)) {
       setLoading(true);
       try {
+        // Eliminar la categoría de Firebase
         await deleteCategory(categoryId);
+        
+        // Actualizar productos afectados a "Sin categoría"
+        const updatedProducts = [...products];
+        let productsUpdated = 0;
+        
+        for (let product of affectedProducts) {
+          const updatedProduct = { ...product, category: 'sin-categoria' };
+          await updateProduct(product.id, updatedProduct);
+          
+          // Actualizar en el estado local
+          const index = updatedProducts.findIndex(p => p.id === product.id);
+          if (index !== -1) {
+            updatedProducts[index] = updatedProduct;
+            productsUpdated++;
+          }
+        }
+        
+        // Actualizar estados
+        setProducts(updatedProducts);
         const updatedCategories = categories.filter(c => c.id !== categoryId);
         setCategories(updatedCategories);
-        showNotification('Categoría eliminada correctamente', 'success');
+        
+        // Mostrar notificación con detalles
+        const message = productsUpdated > 0 
+          ? `Categoría eliminada. ${productsUpdated} producto(s) movidos a "Sin categoría".`
+          : 'Categoría eliminada correctamente';
+        showNotification(message, 'success');
+        
       } catch (error) {
         console.error('Error eliminando categoría:', error);
-        showNotification('Error al eliminar categoría', 'error');
+        showNotification('Error al eliminar categoría: ' + error.message, 'error');
       } finally {
         setLoading(false);
       }
@@ -411,7 +456,6 @@ const AdminPanel = ({ onBack }) => {
           />
         )}
         
-
       </div>
       
       {/* Modal de confirmación para eliminar producto */}

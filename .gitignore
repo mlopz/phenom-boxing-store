@@ -32,19 +32,10 @@ dist-ssr
 
 # Firebase
 .firebase
-firebase-debug.log
-firestore-debug.log
-ui-debug.log
+.firebaserc
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
 
-# Build outputs
-build/
-dist/
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# Other
+pglite-debug.log
