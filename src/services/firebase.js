@@ -108,46 +108,277 @@ export const addProduct = async (productData) => {
   }
 };
 
+/**
+ * Actualiza un producto existente en Firestore
+ * @param {string} productId - ID del producto a actualizar
+ * @param {Object} productData - Datos actualizados del producto
+ * @returns {Promise<void>}
+ * @throws {Error} Si ocurre un error durante la actualización
+ */
 export const updateProduct = async (productId, productData) => {
+  if (!productId) {
+    console.error('❌ [Firebase] Error: ID de producto no proporcionado');
+    throw new Error('ID de producto no proporcionado');
+  }
+
+  console.log(`🔄 [Firebase] Iniciando actualización del producto ID: ${productId}`);
+  
   try {
-    console.log('🔄 [Firebase] Actualizando producto:', productId);
+    // 1. Preparar los datos del producto
+    const processedData = { ...productData };
     
-    // Procesar imágenes si existen
-    let processedData = { ...productData };
-    if (productData.images && productData.images.length > 0) {
-      console.log('🖼️ [Firebase] Procesando', productData.images.length, 'imágenes...');
-      processedData.images = await processProductImages(productData.images);
-      // Mantener compatibilidad con imagen principal
-      processedData.image = processedData.images[0] || '';
+    // 2. Procesar imágenes si existen
+    if (processedData.images && Array.isArray(processedData.images) && processedData.images.length > 0) {
+      console.log(`🖼️ [Firebase] Procesando ${processedData.images.length} imágenes...`);
+      
+      // Filtrar imágenes vacías o inválidas
+      const validImages = processedData.images.filter(img => 
+        img && (typeof img === 'string' || img instanceof String)
+      );
+      
+      // Procesar solo las imágenes válidas
+      if (validImages.length > 0) {
+        processedData.images = await processProductImages(validImages);
+        // Mantener compatibilidad con imagen principal (primera imagen del array)
+        processedData.image = processedData.images[0] || '';
+      } else {
+        // Si no hay imágenes válidas, establecer arrays vacíos
+        processedData.images = [];
+        processedData.image = '';
+      }
+      
+      console.log(`✅ [Firebase] ${processedData.images.length} imágenes procesadas`);
+    } else {
+      // Si no hay imágenes, asegurarse de que los campos estén vacíos
+      processedData.images = [];
+      processedData.image = '';
     }
     
+    // 3. Preparar los datos para Firestore (eliminar campos undefined)
+    const updateData = Object.entries(processedData).reduce((acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+    
+    // 4. Actualizar el documento en Firestore
+    console.log('📝 [Firebase] Actualizando documento en Firestore...');
     const productRef = doc(db, 'products', productId);
-    await updateDoc(productRef, processedData);
-    console.log('✅ [Firebase] Producto actualizado:', productId);
+    await updateDoc(productRef, updateData, { merge: true });
+    
+    console.log(`✅ [Firebase] Producto ${productId} actualizado correctamente`);
+    
   } catch (error) {
-    console.error('❌ [Firebase] Error actualizando producto:', error);
-    throw error;
+    console.error('❌ [Firebase] Error crítico actualizando producto:', error);
+    
+    // Mejorar el mensaje de error para el usuario
+    let errorMessage = 'Error al actualizar el producto';
+    
+    if (error.code === 'permission-denied') {
+      errorMessage = 'No tienes permisos para actualizar este producto';
+    } else if (error.code === 'not-found') {
+      errorMessage = 'El producto no existe o ha sido eliminado';
+    } else if (error.code === 'unavailable') {
+      errorMessage = 'Error de conexión. Por favor, verifica tu conexión a internet';
+    } else if (error.message) {
+      errorMessage += `: ${error.message}`;
+    }
+    
+    throw new Error(errorMessage);
   }
 };
 
-export const deleteProduct = async (productId) => {
+/**
+ * Extrae la ruta de almacenamiento de una URL de Firebase Storage
+ * @param {string} url - URL completa de la imagen en Firebase Storage
+ * @returns {string|null} Ruta de la imagen o null si no se pudo extraer
+ */
+const extractImagePath = (url) => {
+  if (!url || typeof url !== 'string') {
+    console.warn('⚠️ [Storage] URL de imagen no válida');
+    return null;
+  }
+
   try {
-    console.log('🔍 [DEBUG] Intentando eliminar producto con ID:', productId);
+    // Patrones de URL de Firebase Storage
+    const patterns = [
+      // Formato estándar: https://firebasestorage.googleapis.com/v0/b/bucket/o/path/to/image.jpg?alt=media&token=...
+      /https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/[^/]+\/o\/([^?]+)/,
+      
+      // Formato de descarga directa: https://storage.googleapis.com/bucket/o/path%2Fto%2Fimage.jpg?alt=media&token=...
+      /https:\/\/storage\.googleapis\.com\/[^/]+\/o\/([^?]+)/,
+      
+      // Formato alternativo: https://firebasestorage.googleapis.com/v0/b/bucket.appspot.com/o/path%2Fto%2Fimage.jpg?alt=media&token=...
+      /https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/[^/]+\.appspot\.com\/o\/([^?]+)/
+    ];
+
+    // Probar cada patrón hasta encontrar una coincidencia
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        // Decodificar la URL (convierte %2F a /, etc.)
+        const decodedPath = decodeURIComponent(match[1]);
+        console.log(`🔍 [Storage] Ruta extraída: ${decodedPath}`);
+        return decodedPath;
+      }
+    }
+
+    // Si no coincide con ningún patrón conocido, intentar extraer la ruta manualmente
+    console.warn('⚠️ [Storage] No se pudo extraer la ruta con patrones estándar, intentando extracción manual...');
     
-    if (!productId) {
-      throw new Error('ID de producto no válido');
+    // Extraer la parte después de /o/ y antes de ?
+    const oIndex = url.indexOf('/o/');
+    if (oIndex !== -1) {
+      const afterO = url.substring(oIndex + 3); // +3 para saltar '/o/'
+      const beforeQuery = afterO.split('?')[0];
+      const decodedPath = decodeURIComponent(beforeQuery);
+      
+      // Verificar que la ruta extraída tenga sentido
+      if (decodedPath && !decodedPath.includes('http') && decodedPath.length > 1) {
+        console.log(`🔍 [Storage] Ruta extraída manualmente: ${decodedPath}`);
+        return decodedPath;
+      }
     }
     
-    const productRef = doc(db, 'products', productId);
-    console.log('🔍 [DEBUG] Referencia del producto creada:', productRef.path);
+    console.warn('❌ [Storage] No se pudo extraer la ruta de la imagen');
+    return null;
     
-    await deleteDoc(productRef);
-    console.log('✅ [Firebase] Producto eliminado correctamente:', productId);
   } catch (error) {
-    console.error('❌ [Firebase] Error eliminando producto:', error);
-    console.error('❌ [Firebase] ProductId recibido:', productId);
-    console.error('❌ [Firebase] Tipo de productId:', typeof productId);
-    throw error;
+    console.error('❌ [Storage] Error extrayendo ruta de la imagen:', error);
+    return null;
+  }
+};
+
+/**
+ * Elimina un producto y sus imágenes asociadas de Firebase Storage
+ * @param {string} productId - ID del producto a eliminar
+ * @returns {Promise<{success: boolean, deletedImages: number}>} - Objeto con éxito y cantidad de imágenes eliminadas
+ * @throws {Error} Si ocurre un error durante la eliminación
+ */
+export const deleteProduct = async (productId) => {
+  // Validación de entrada
+  if (!productId || typeof productId !== 'string') {
+    console.error('❌ [Firebase] Error: ID de producto no válido');
+    throw new Error('ID de producto no válido');
+  }
+
+  console.log(`🔍 [Firebase] Iniciando eliminación del producto ID: ${productId}`);
+  
+  // Iniciar transacción de Firestore para operación atómica
+  const batch = writeBatch(db);
+  const productRef = doc(db, 'products', productId);
+  let deletedImagesCount = 0;
+  
+  try {
+    // 1. Obtener el documento del producto
+    console.log('📦 [Firebase] Obteniendo datos del producto...');
+    const productSnap = await getDoc(productRef);
+    
+    // Verificar si el producto existe
+    if (!productSnap.exists()) {
+      console.warn(`⚠️ [Firebase] El producto con ID ${productId} no existe`);
+      throw new Error('El producto no existe o ya ha sido eliminado');
+    }
+    
+    const productData = productSnap.data();
+    console.log('✅ [Firebase] Datos del producto obtenidos');
+    
+    // 2. Procesar eliminación de imágenes
+    try {
+      // Unificar todas las imágenes en un solo array (principal + secundarias)
+      const allImages = [
+        productData.image, // Imagen principal
+        ...(Array.isArray(productData.images) ? productData.images : []) // Imágenes adicionales
+      ].filter(Boolean); // Filtrar valores nulos/undefined
+      
+      console.log(`🖼️ [Storage] Procesando ${allImages.length} imágenes...`);
+      
+      // Eliminar cada imagen del Storage
+      const deletePromises = allImages.map(async (imageUrl, index) => {
+        if (!imageUrl) return;
+        
+        try {
+          // Extraer la ruta de la imagen
+          const imagePath = extractImagePath(imageUrl);
+          
+          if (!imagePath) {
+            console.warn(`⚠️ [Storage] No se pudo extraer la ruta de la imagen: ${imageUrl.substring(0, 50)}...`);
+            return;
+          }
+          
+          console.log(`🗑️ [Storage] Eliminando imagen ${index + 1}/${allImages.length}: ${imagePath}`);
+          const imageRef = ref(storage, imagePath);
+          
+          // Verificar si la referencia es válida
+          if (!imageRef) {
+            console.error(`❌ [Storage] Referencia de imagen inválida`);
+            return;
+          }
+          
+          // Eliminar el archivo de Storage
+          await deleteObject(imageRef);
+          console.log(`✅ [Storage] Imagen eliminada: ${imagePath}`);
+          deletedImagesCount++;
+          
+        } catch (imgError) {
+          // Manejar específicamente el error de "objeto no encontrado"
+          if (imgError.code === 'storage/object-not-found') {
+            console.warn(`ℹ️ [Storage] La imagen ya no existe: ${imageUrl.substring(0, 50)}...`);
+          } else {
+            console.error(`❌ [Storage] Error eliminando imagen:`, imgError);
+            throw imgError; // Relanzar para ser capturado por el catch externo
+          }
+        }
+      });
+      
+      // Esperar a que todas las eliminaciones de imágenes se completen
+      await Promise.all(deletePromises);
+      
+    } catch (imgError) {
+      console.error('❌ [Storage] Error crítico eliminando imágenes:', imgError);
+      // No relanzamos el error aquí para intentar eliminar el documento de todas formas
+    }
+    
+    // 3. Eliminar el documento del producto en la transacción
+    console.log('🗑️ [Firebase] Programando eliminación del documento...');
+    batch.delete(productRef);
+    
+    // 4. Ejecutar la transacción
+    console.log('🔄 [Firebase] Ejecutando transacción...');
+    await batch.commit();
+    
+    console.log(`✅ [Firebase] Producto eliminado correctamente. Imágenes eliminadas: ${deletedImagesCount}`);
+    return { success: true, deletedImages: deletedImagesCount };
+    
+  } catch (error) {
+    console.error('❌ [Firebase] Error crítico eliminando producto:', error);
+    
+    // Revertir la transacción en caso de error
+    try {
+      await batch.commit();
+    } catch (commitError) {
+      console.error('❌ [Firebase] Error al revertir la transacción:', commitError);
+    }
+    
+    // Mejorar mensajes de error para el usuario
+    let errorMessage = 'Error al eliminar el producto';
+    
+    if (error.code === 'permission-denied') {
+      errorMessage = 'No tienes permisos para eliminar este producto';
+    } else if (error.code === 'not-found' || error.message.includes('no existe')) {
+      errorMessage = 'El producto no existe o ya ha sido eliminado';
+    } else if (error.code === 'unavailable') {
+      errorMessage = 'Error de conexión. Por favor, verifica tu conexión a internet';
+    } else if (error.code === 'failed-precondition') {
+      errorMessage = 'El producto no se puede eliminar porque está siendo utilizado';
+    } else if (error.code === 'aborted') {
+      errorMessage = 'La operación fue cancelada';
+    } else if (error.message) {
+      errorMessage += `: ${error.message}`;
+    }
+    
+    throw new Error(errorMessage);
   }
 };
 
@@ -185,57 +416,178 @@ const compressImage = (base64Data, quality = 0.8, maxWidth = 800) => {
   });
 };
 
-// Función para subir imagen a Firebase Storage
+/**
+ * Sube una imagen a Firebase Storage y devuelve su URL de descarga
+ * @param {string} base64Data - Imagen en formato base64 o data URL
+ * @param {string} fileName - Nombre del archivo (se le agregará un prefijo único)
+ * @returns {Promise<string>} URL de descarga pública de la imagen
+ * @throws {Error} Si ocurre un error durante la subida
+ */
 export const uploadImageToStorage = async (base64Data, fileName) => {
-  try {
-    // Comprimir imagen antes de subir
-    const compressedBase64 = await compressImage(base64Data, 0.8, 800);
-    
-    // Convertir base64 comprimido a blob
-    const response = await fetch(compressedBase64);
-    const blob = await response.blob();
-    
-    // Crear referencia en Storage
-    const imageRef = ref(storage, `products/${Date.now()}_${fileName}`);
-    
-    // Subir imagen
-    const snapshot = await uploadBytes(imageRef, blob);
-    
-    // Obtener URL de descarga
-    const downloadURL = await getDownloadURL(snapshot.ref);
-    
-    console.log('✅ [Storage] Imagen subida y optimizada:', downloadURL);
-    return downloadURL;
-  } catch (error) {
-    console.error('❌ [Storage] Error subiendo imagen:', error);
-    throw error;
+  if (!base64Data) {
+    throw new Error('No se proporcionaron datos de imagen');
   }
-};
 
-// Función para procesar múltiples imágenes
-export const processProductImages = async (images) => {
+  // Validar que el nombre de archivo sea una cadena no vacía
+  const safeFileName = (typeof fileName === 'string' && fileName.trim() !== '') 
+    ? fileName.trim() 
+    : `image_${Date.now()}.jpg`;
+  
   try {
-    const imageUrls = [];
+    console.log('🔄 [Storage] Iniciando subida de imagen...');
     
-    for (let i = 0; i < images.length; i++) {
-      const image = images[i];
-      
-      // Si ya es una URL, mantenerla
-      if (typeof image === 'string' && image.startsWith('http')) {
-        imageUrls.push(image);
-      } 
-      // Si es base64, subirla a Storage
-      else if (typeof image === 'string' && image.startsWith('data:')) {
-        const fileName = `image_${i}.jpg`;
-        const url = await uploadImageToStorage(image, fileName);
-        imageUrls.push(url);
+    // 1. Comprimir imagen antes de subir (si es una imagen base64 válida)
+    let imageToUpload = base64Data;
+    if (base64Data.startsWith('data:image/')) {
+      try {
+        console.log('🖼️ [Storage] Comprimiendo imagen...');
+        imageToUpload = await compressImage(base64Data, 0.8, 800);
+      } catch (compressError) {
+        console.warn('⚠️ [Storage] No se pudo comprimir la imagen, subiendo original', compressError);
+        // Continuar con la imagen original si falla la compresión
       }
     }
     
-    return imageUrls;
+    // 2. Convertir a Blob (si es una data URL)
+    let blob;
+    if (typeof imageToUpload === 'string' && imageToUpload.startsWith('data:')) {
+      try {
+        const response = await fetch(imageToUpload);
+        if (!response.ok) {
+          throw new Error(`Error al convertir imagen: ${response.status} ${response.statusText}`);
+        }
+        blob = await response.blob();
+      } catch (blobError) {
+        console.error('❌ [Storage] Error al convertir a Blob:', blobError);
+        throw new Error('Formato de imagen no válido');
+      }
+    } else {
+      // Si ya es un Blob o un File, usarlo directamente
+      blob = imageToUpload;
+    }
+    
+    // 3. Validar tipo MIME (solo permitir imágenes)
+    if (!blob.type.startsWith('image/')) {
+      throw new Error('El archivo debe ser una imagen (JPEG, PNG, etc.)');
+    }
+    
+    // 4. Crear referencia en Storage con nombre único
+    const fileExtension = safeFileName.split('.').pop() || 'jpg';
+    const uniqueFileName = `products/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExtension}`;
+    const imageRef = ref(storage, uniqueFileName);
+    
+    console.log(`🔼 [Storage] Subiendo imagen: ${uniqueFileName} (${(blob.size / 1024).toFixed(2)} KB)`);
+    
+    // 5. Configurar metadatos para optimización de caché (1 año)
+    const metadata = {
+      cacheControl: 'public, max-age=31536000', // 1 año
+      contentType: blob.type,
+    };
+    
+    // 6. Subir el archivo a Firebase Storage
+    const snapshot = await uploadBytes(imageRef, blob, metadata);
+    
+    // 7. Obtener URL de descarga
+    const downloadURL = await getDownloadURL(snapshot.ref);
+    
+    console.log('✅ [Storage] Imagen subida exitosamente');
+    console.log(`🔗 [Storage] URL generada: ${downloadURL.substring(0, 80)}...`);
+    
+    // 8. Verificar accesibilidad de la URL (opcional, puede omitirse en producción)
+    try {
+      const testResponse = await fetch(downloadURL, { method: 'HEAD' });
+      if (!testResponse.ok) {
+        console.warn(`⚠️ [Storage] La URL generada no es accesible: ${testResponse.status}`);
+      }
+    } catch (testError) {
+      console.warn('⚠️ [Storage] No se pudo verificar la URL (puede ser normal):', testError.message);
+    }
+    
+    return downloadURL;
+    
   } catch (error) {
-    console.error('❌ [Storage] Error procesando imágenes:', error);
-    throw error;
+    console.error('❌ [Storage] Error crítico subiendo imagen:', error);
+    
+    // Mejorar mensajes de error para el usuario
+    let errorMessage = 'Error al subir la imagen';
+    
+    if (error.code === 'storage/unauthorized') {
+      errorMessage = 'No tienes permisos para subir imágenes';
+    } else if (error.code === 'storage/canceled') {
+      errorMessage = 'La subida de la imagen fue cancelada';
+    } else if (error.code === 'storage/unknown') {
+      errorMessage = 'Error desconocido al subir la imagen';
+    } else if (error.message) {
+      errorMessage += `: ${error.message}`;
+    }
+    
+    throw new Error(errorMessage);
+  }
+};
+
+/**
+ * Procesa múltiples imágenes para un producto, subiendo las nuevas a Firebase Storage
+ * y manteniendo las URLs existentes.
+ * @param {Array<string>} images - Array de URLs de imágenes o strings en base64
+ * @returns {Promise<Array<string>>} Array de URLs de imágenes procesadas
+ */
+export const processProductImages = async (images) => {
+  // Validación de entrada
+  if (!images || !Array.isArray(images)) {
+    console.log('⚠️ [Storage] No hay imágenes para procesar o no es un array');
+    return [];
+  }
+  
+  console.log(`🔄 [Storage] Iniciando procesamiento de ${images.length} imágenes...`);
+  const processedImages = [];
+  
+  try {
+    // Procesar cada imagen en paralelo para mejor rendimiento
+    const uploadPromises = images.map(async (image, index) => {
+      if (!image) {
+        console.warn(`⚠️ [Storage] Imagen en índice ${index} es nula o indefinida`);
+        return null;
+      }
+      
+      // Si ya es una URL de Firebase Storage o HTTP/HTTPS, mantenerla
+      if (typeof image === 'string') {
+        // Verificar si es una URL de Firebase Storage (contiene 'firebasestorage' o es una URL HTTP/HTTPS)
+        if (image.includes('firebasestorage') || image.startsWith('http')) {
+          console.log(`🔗 [Storage] Manteniendo URL existente [${index}]: ${image.substring(0, 50)}...`);
+          return image;
+        }
+        
+        // Si es una cadena base64, subirla a Storage
+        if (image.startsWith('data:image/')) {
+          try {
+            const fileName = `products/product_${Date.now()}_${index}.jpg`;
+            console.log(`🔼 [Storage] Subiendo imagen ${index + 1} a Firebase Storage...`);
+            const url = await uploadImageToStorage(image, fileName);
+            console.log(`✅ [Storage] Imagen ${index + 1} subida correctamente`);
+            return url;
+          } catch (uploadError) {
+            console.error(`❌ [Storage] Error subiendo imagen ${index + 1}:`, uploadError);
+            return null; // Devolver null para imágenes fallidas
+          }
+        }
+      }
+      
+      console.warn(`⚠️ [Storage] Formato de imagen no reconocido en índice ${index}:`, typeof image);
+      return null;
+    });
+    
+    // Esperar a que todas las subidas se completen
+    const results = await Promise.all(uploadPromises);
+    
+    // Filtrar valores nulos (imágenes fallidas) y devolver solo las URLs válidas
+    const validImages = results.filter(url => url !== null);
+    
+    console.log(`✅ [Storage] Procesamiento completado: ${validImages.length}/${images.length} imágenes exitosas`);
+    return validImages;
+    
+  } catch (error) {
+    console.error('❌ [Storage] Error crítico procesando imágenes:', error);
+    throw new Error(`Error al procesar imágenes: ${error.message}`);
   }
 };
 

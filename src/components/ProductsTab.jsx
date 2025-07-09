@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Edit, Trash2, Save, X, Search, Package, Eye, Upload, Image } from 'lucide-react';
+import { uploadImageToStorage, storage } from '../services/firebase';
+import { ref, deleteObject } from 'firebase/storage';
 
 const ProductsTab = ({ 
   products, 
@@ -188,27 +190,50 @@ const ProductForm = ({ product, categories, onSave, onCancel, showNotification }
   const [showAddSize, setShowAddSize] = useState(false);
   const [newSizeValue, setNewSizeValue] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('🔍 [DEBUG] handleSubmit ejecutado');
-    console.log('🔍 [DEBUG] product.id:', product.id);
-    console.log('🔍 [DEBUG] formData.images:', formData.images);
-    console.log('🔍 [DEBUG] formData.images.length:', formData.images.length);
     
-    const productData = {
-      ...formData,
-      id: product.id, // ✅ CRÍTICO: Preservar el ID para edición
-      features: formData.features.split(',').map(f => f.trim()).filter(f => f),
-      image: formData.images[0] || '', // Mantener compatibilidad con imagen principal
-      images: formData.images // Nueva propiedad para múltiples imágenes
-    };
-    
-    console.log('🔍 [DEBUG] productData creado:', productData);
-    console.log('🔍 [DEBUG] productData.id:', productData.id);
-    console.log('🔍 [DEBUG] productData.images:', productData.images);
-    console.log('🔍 [DEBUG] Llamando onSave...');
-    
-    onSave(productData);
+    try {
+      // Mostrar indicador de carga
+      showNotification('Guardando producto...', 'info');
+      
+      console.log('🔍 [DEBUG] handleSubmit ejecutado');
+      console.log('🔍 [DEBUG] product.id:', product.id);
+      console.log('🔍 [DEBUG] formData.images:', formData.images);
+      
+      // Procesar imágenes: subir las que sean nuevas (data URLs)
+      const processedImages = [];
+      
+      for (const img of formData.images) {
+        if (img.startsWith('data:image')) {
+          // Es una imagen nueva, subir a Firebase Storage
+          console.log('🔼 [Storage] Subiendo nueva imagen...');
+          const imageUrl = await uploadImageToStorage(img, `product_${Date.now()}.jpg`);
+          processedImages.push(imageUrl);
+        } else {
+          // Es una URL existente, mantenerla
+          processedImages.push(img);
+        }
+      }
+      
+      // Crear objeto de producto con las URLs procesadas
+      const productData = {
+        ...formData,
+        id: product.id, // ✅ CRÍTICO: Preservar el ID para edición
+        features: formData.features.split(',').map(f => f.trim()).filter(f => f),
+        image: processedImages[0] || '', // Mantener compatibilidad con imagen principal
+        images: processedImages // Usar las URLs procesadas
+      };
+      
+      console.log('✅ [DEBUG] Producto procesado para guardar:', productData);
+      
+      // Llamar a la función onSave con los datos procesados
+      onSave(productData);
+      
+    } catch (error) {
+      console.error('❌ [ERROR] Error en handleSubmit:', error);
+      showNotification('Error al guardar el producto: ' + error.message, 'error');
+    }
   };
 
   const handleChange = (field, value) => {
@@ -218,42 +243,142 @@ const ProductForm = ({ product, categories, onSave, onCancel, showNotification }
     }));
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validar límite de imágenes
-    if (formData.images.length >= 10) {
-      alert('Máximo 10 imágenes por producto.');
-      return;
-    }
+    try {
+      // Validar límite de imágenes
+      if (formData.images.length >= 10) {
+        alert('Máximo 10 imágenes por producto.');
+        return;
+      }
 
-    // Validar tamaño (5MB máximo)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('La imagen es demasiado grande. Máximo 5MB.');
-      return;
-    }
+      // Validar tamaño (5MB máximo)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen es demasiado grande. Máximo 5MB.');
+        return;
+      }
 
-    // Validar tipo
-    if (!file.type.startsWith('image/')) {
-      alert('Por favor selecciona un archivo de imagen válido.');
-      return;
-    }
+      // Validar tipo
+      if (!file.type.startsWith('image/')) {
+        alert('Por favor selecciona un archivo de imagen válido.');
+        return;
+      }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const newImages = [...formData.images, event.target.result];
-      handleChange('images', newImages);
-    };
-    reader.readAsDataURL(file);
-    
-    // Limpiar el input para permitir seleccionar la misma imagen de nuevo
-    e.target.value = '';
+      // Mostrar indicador de carga
+      showNotification('Subiendo imagen...', 'info');
+      
+      // Leer el archivo como DataURL
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          // Subir la imagen a Firebase Storage
+          const imageUrl = await uploadImageToStorage(event.target.result, `products/${Date.now()}_${file.name}`);
+          
+          // Agregar la URL de la imagen al estado
+          const newImages = [...formData.images, imageUrl];
+          handleChange('images', newImages);
+          
+          showNotification('Imagen subida correctamente', 'success');
+        } catch (error) {
+          console.error('Error al subir la imagen:', error);
+          showNotification('Error al subir la imagen', 'error');
+        }
+      };
+      reader.readAsDataURL(file);
+      
+    } catch (error) {
+      console.error('Error en handleImageUpload:', error);
+      showNotification('Error al procesar la imagen', 'error');
+    } finally {
+      // Limpiar el input para permitir seleccionar la misma imagen de nuevo
+      e.target.value = '';
+    }
   };
 
-  const removeImage = (indexToRemove) => {
-    const newImages = formData.images.filter((_, index) => index !== indexToRemove);
-    handleChange('images', newImages);
+  // Función para extraer el path de la imagen de una URL de Firebase Storage
+  const extractImagePath = (url) => {
+    try {
+      // Ejemplo de URL: https://firebasestorage.googleapis.com/v0/b/tu-proyecto.appspot.com/o/products%2F12345_image.jpg?alt=media&token=xyz
+      if (!url) return null;
+      
+      // Extraer la parte después de /o/ y antes de ?
+      const urlParts = url.split('/o/');
+      if (urlParts.length < 2) return null;
+      
+      const pathPart = urlParts[1].split('?')[0];
+      const decodedPath = decodeURIComponent(pathPart);
+      
+      console.log('🔍 [Storage] Ruta extraída:', decodedPath);
+      return decodedPath;
+    } catch (error) {
+      console.error('❌ [Storage] Error extrayendo ruta de la imagen:', error);
+      return null;
+    }
+  };
+
+  const removeImage = async (indexToRemove) => {
+    try {
+      const imageUrl = formData.images[indexToRemove];
+      
+      if (!imageUrl) {
+        console.warn('❌ [Storage] No hay URL de imagen para eliminar');
+        return;
+      }
+      
+      console.log('🔍 [Storage] Iniciando eliminación de imagen:', imageUrl);
+      
+      // Verificar si la imagen está en Firebase Storage
+      if (imageUrl.includes('firebasestorage')) {
+        showNotification('Eliminando imagen del almacenamiento...', 'info');
+        
+        try {
+          // Extraer el path de la imagen
+          const imagePath = extractImagePath(imageUrl);
+          
+          if (imagePath) {
+            console.log('🗑️ [Storage] Eliminando imagen del storage:', imagePath);
+            const imageRef = ref(storage, imagePath);
+            
+            // Verificar si la referencia es válida
+            if (!imageRef) {
+              throw new Error('No se pudo crear la referencia a la imagen');
+            }
+            
+            // Eliminar el archivo de Storage
+            await deleteObject(imageRef);
+            console.log('✅ [Storage] Imagen eliminada correctamente');
+            showNotification('Imagen eliminada del almacenamiento', 'success');
+          } else {
+            console.warn('⚠️ [Storage] No se pudo extraer la ruta de la imagen');
+            showNotification('No se pudo procesar la URL de la imagen', 'warning');
+          }
+        } catch (storageError) {
+          console.error('❌ [Storage] Error eliminando imagen:', storageError);
+          
+          // Si el error es porque el archivo ya no existe, continuar de todos modos
+          if (storageError.code === 'storage/object-not-found') {
+            console.log('ℹ️ [Storage] La imagen ya no existe en el almacenamiento');
+            showNotification('La imagen ya había sido eliminada', 'info');
+          } else {
+            // Para otros errores, mostrar advertencia pero continuar
+            showNotification('No se pudo eliminar la imagen del almacenamiento', 'warning');
+          }
+        }
+      } else {
+        console.log('ℹ️ [Storage] La imagen no está en Firebase Storage, solo se eliminará localmente');
+      }
+      
+      // Actualizar el estado local en cualquier caso
+      const newImages = formData.images.filter((_, index) => index !== indexToRemove);
+      console.log('🔄 [UI] Actualizando estado local con imágenes:', newImages.length);
+      handleChange('images', newImages);
+      
+    } catch (error) {
+      console.error('❌ [ERROR] Error en removeImage:', error);
+      showNotification('Error al eliminar la imagen: ' + error.message, 'error');
+    }
   };
 
   const moveImage = (fromIndex, toIndex) => {

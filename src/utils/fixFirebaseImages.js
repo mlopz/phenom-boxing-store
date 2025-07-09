@@ -1,9 +1,7 @@
 import { 
   getProducts, 
   getCategories, 
-  updateProduct, 
-  uploadProductImage, 
-  deleteProductImage 
+  updateProduct 
 } from '../services/firebase.js';
 
 /**
@@ -181,8 +179,8 @@ export const reloadCatalogFromScratch = async () => {
   console.log(' [Reload Catalog] Iniciando recarga completa...');
   
   try {
-    // Importar el catálogo original
-    const { default: catalogData } = await import('../data/catalog.js');
+    // Importar el catálogo original desde el archivo JSON
+    const { default: catalogData } = await import('../../catalogo-real.json');
     
     console.log(' [Reload Catalog] Catálogo original cargado');
     console.log(`   [Reload Catalog] Productos: ${catalogData.products.length}`);

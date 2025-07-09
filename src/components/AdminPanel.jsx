@@ -89,35 +89,77 @@ const AdminPanel = ({ onBack }) => {
     setEditingProduct({ ...product });
   };
 
+  /**
+   * Maneja el guardado de un producto, ya sea nuevo o existente
+   * @param {Object} product - Datos del producto a guardar
+   */
   const handleSaveProduct = async (product) => {
-    console.log('🔍 [DEBUG] handleSaveProduct ejecutado');
-    console.log('🔍 [DEBUG] product recibido:', product);
-    console.log('🔍 [DEBUG] product.images:', product.images);
-    console.log('🔍 [DEBUG] product.images.length:', product.images?.length);
+    console.log('🔍 [DEBUG] Iniciando guardado de producto');
+    console.log('📦 [Producto] Datos recibidos:', {
+      id: product.id || 'nuevo',
+      nombre: product.name,
+      tieneImagen: !!product.image,
+      numImagenes: product.images?.length || 0
+    });
     
     setLoading(true);
+    
     try {
-      if (product.id) {
-        console.log('🔍 [DEBUG] Editando producto existente con ID:', product.id);
-        // Editar producto existente
-        await updateProduct(product.id, product);
-        const updatedProducts = products.map(p => p.id === product.id ? product : p);
-        setProducts(updatedProducts);
-        showNotification('Producto actualizado correctamente', 'success');
-      } else {
-        console.log('🔍 [DEBUG] Agregando nuevo producto...');
-        console.log('🔍 [DEBUG] Llamando addProduct con:', product);
-        // Agregar nuevo producto
-        const newProductId = await addProduct(product);
-        console.log('🔍 [DEBUG] Producto agregado con ID:', newProductId);
-        const newProduct = { ...product, id: newProductId };
-        setProducts([...products, newProduct]);
-        showNotification('Producto agregado correctamente', 'success');
+      // 1. Validar datos básicos del producto
+      if (!product.name || !product.category) {
+        throw new Error('El nombre y la categoría son campos requeridos');
       }
+      
+      // 2. Procesar el producto según si es nuevo o existente
+      if (product.id) {
+        console.log('🔄 [Producto] Actualizando producto existente con ID:', product.id);
+        
+        // 2.1. Actualizar producto existente
+        await updateProduct(product.id, product);
+        
+        // 2.2. Actualizar estado local
+        const updatedProducts = products.map(p => 
+          p.id === product.id ? product : p
+        );
+        
+        setProducts(updatedProducts);
+        showNotification('✅ Producto actualizado correctamente', 'success');
+        console.log('✅ [Producto] Producto actualizado con éxito');
+        
+      } else {
+        console.log('🆕 [Producto] Creando nuevo producto...');
+        
+        // 2.1. Crear nuevo producto
+        const newProductId = await addProduct(product);
+        console.log('🔑 [Producto] Nuevo ID generado:', newProductId);
+        
+        // 2.2. Actualizar estado local con el nuevo ID
+        const newProduct = { ...product, id: newProductId };
+        setProducts(prevProducts => [...prevProducts, newProduct]);
+        
+        showNotification('✅ Producto creado correctamente', 'success');
+        console.log('✅ [Producto] Producto creado con éxito');
+      }
+      
+      // 3. Cerrar el formulario de edición
       setEditingProduct(null);
+      
     } catch (error) {
-      console.error('❌ [DEBUG] Error guardando producto:', error);
-      showNotification('Error al guardar producto', 'error');
+      console.error('❌ [ERROR] Error en handleSaveProduct:', error);
+      
+      // 4. Manejar errores específicos
+      let errorMessage = 'Error al guardar el producto';
+      
+      if (error.message.includes('permission-denied')) {
+        errorMessage = 'No tienes permisos para realizar esta acción';
+      } else if (error.message.includes('network-request-failed')) {
+        errorMessage = 'Error de conexión. Verifica tu conexión a internet';
+      } else if (error.message) {
+        errorMessage += `: ${error.message}`;
+      }
+      
+      showNotification(errorMessage, 'error');
+      
     } finally {
       setLoading(false);
     }
@@ -158,22 +200,82 @@ const AdminPanel = ({ onBack }) => {
     setProductToDelete(null);
   };
   
+  /**
+   * Ejecuta la eliminación de un producto y sus imágenes asociadas
+   * @param {string} productId - ID del producto a eliminar
+   */
   const executeDelete = async (productId) => {
     setLoading(true);
+    
     try {
-      console.log('🔍 [DEBUG] Llamando deleteProduct...');
-      await deleteProduct(productId);
-      console.log('🔍 [DEBUG] deleteProduct completado, actualizando estado local...');
+      console.log('🔍 [Firebase] Iniciando proceso de eliminación para producto ID:', productId);
       
-      const updatedProducts = products.filter(p => p.id !== productId);
-      console.log('🔍 [DEBUG] Productos después del filtro:', updatedProducts.length);
+      // 1. Buscar el producto en el estado local para mostrar información detallada
+      const productToDelete = products.find(p => p.id === productId);
       
-      setProducts(updatedProducts);
-      showNotification('Producto eliminado correctamente', 'success');
-      console.log('🔍 [DEBUG] Estado actualizado y notificación mostrada');
+      if (!productToDelete) {
+        throw new Error('El producto no se encontró en la lista local');
+      }
+      
+      const productName = productToDelete.name || 'Producto sin nombre';
+      const imageCount = [
+        productToDelete.image,
+        ...(productToDelete.images || [])
+      ].filter(Boolean).length;
+      
+      console.log(`🗑️ [Firebase] Eliminando producto: "${productName}" (ID: ${productId})`);
+      console.log(`📊 [Firebase] Detalles: ${imageCount} imagen(es) a eliminar`);
+      
+      // 2. Mostrar confirmación al usuario
+      const confirmMessage = `¿Estás seguro de que deseas eliminar "${productName}"?\n\n` +
+        `Se eliminarán ${imageCount} imagen(es) asociadas.\n\n` +
+        `Esta acción no se puede deshacer.`;
+      
+      if (!window.confirm(confirmMessage)) {
+        console.log('❌ [Firebase] Eliminación cancelada por el usuario');
+        return;
+      }
+      
+      // 3. Llamar a la función deleteProduct que gestiona la eliminación en Firestore y Storage
+      console.log('🔄 [Firebase] Iniciando eliminación del producto y sus imágenes...');
+      const startTime = Date.now();
+      
+      const result = await deleteProduct(productId);
+      const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2);
+      
+      if (result && result.success) {
+        // 4. Actualizar el estado local solo si la eliminación fue exitosa
+        const updatedProducts = products.filter(p => p.id !== productId);
+        setProducts(updatedProducts);
+        
+        console.log(`✅ [Firebase] Producto e imágenes eliminados correctamente en ${elapsedTime}s`);
+        console.log(`📊 [Firebase] Imágenes eliminadas: ${result.deletedImages}`);
+        
+        showNotification(
+          `"${productName}" eliminado correctamente (${result.deletedImages} imágenes)`, 
+          'success'
+        );
+      } else {
+        throw new Error(result?.error || 'No se pudo completar la eliminación');
+      }
+      
     } catch (error) {
-      console.error('❌ [DEBUG] Error eliminando producto:', error);
-      showNotification('Error al eliminar producto', 'error');
+      console.error('❌ [Firebase] Error en executeDelete:', error);
+      
+      // Determinar el mensaje de error apropiado
+      let errorMessage = 'Error al eliminar el producto';
+      
+      if (error.code === 'permission-denied') {
+        errorMessage = 'No tienes permisos para eliminar productos';
+      } else if (error.code === 'not-found' || error.message.includes('no existe')) {
+        errorMessage = 'El producto no existe o ya ha sido eliminado';
+      } else if (error.code === 'unavailable') {
+        errorMessage = 'Error de conexión. Verifica tu conexión a internet';
+      } else if (error.message) {
+        errorMessage += `: ${error.message}`;
+      }
+      
+      showNotification(errorMessage, 'error');
     } finally {
       setLoading(false);
     }
