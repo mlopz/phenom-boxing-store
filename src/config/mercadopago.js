@@ -24,13 +24,15 @@ const mercadopagoConfig = {
   preferences: {
     // URLs de retorno después del pago
     back_urls: {
-      success: `${import.meta.env.VITE_SITE_URL || 'http://localhost:3001'}/pago-exitoso`,
-      failure: `${import.meta.env.VITE_SITE_URL || 'http://localhost:3001'}/pago-fallido`,
-      pending: `${import.meta.env.VITE_SITE_URL || 'http://localhost:3001'}/pago-pendiente`
+      success: `${import.meta.env.VITE_SITE_URL || 'http://localhost:3001'}/?payment=success`,
+      failure: `${import.meta.env.VITE_SITE_URL || 'http://localhost:3001'}/?payment=failure`,
+      pending: `${import.meta.env.VITE_SITE_URL || 'http://localhost:3001'}/?payment=pending`
     },
     
+    // URL del webhook para notificaciones
+    notification_url: `${import.meta.env.VITE_SITE_URL || 'http://localhost:3001'}/.netlify/functions/payment-webhook`,
+    
     // Configuración adicional
-    auto_return: 'approved',
     binary_mode: true, // Solo pagos aprobados o rechazados
     
     // Métodos de pago excluidos (opcional)
@@ -41,7 +43,12 @@ const mercadopagoConfig = {
       ],
       installments: 12 // Máximo de cuotas
     }
-  }
+  },
+  
+  // URL del backend (Netlify Functions)
+  backendUrl: import.meta.env.VITE_SITE_URL ? 
+    `${import.meta.env.VITE_SITE_URL}/.netlify/functions` : 
+    'http://localhost:8888/.netlify/functions'
 };
 
 // Función para validar configuración

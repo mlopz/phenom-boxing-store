@@ -79,7 +79,7 @@ function AppContent() {
       console.log('💳 [MercadoPago] Datos de pago:', paymentData);
       
       // Llamar al endpoint de MercadoPago (esto se implementará en el backend)
-      const response = await fetch('/api/create-payment', {
+      const response = await fetch('/.netlify/functions/create-payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

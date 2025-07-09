@@ -1,0 +1,8 @@
+{
+  "name": "phenom-netlify-functions",
+  "version": "1.0.0",
+  "description": "Netlify Functions para Phenom Store",
+  "dependencies": {
+    "mercadopago": "^2.0.15"
+  }
+}
