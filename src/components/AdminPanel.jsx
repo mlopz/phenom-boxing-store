@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Package, LayoutGrid, Download, Eye, Save, Plus, Edit, Trash2, ArrowLeft, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
 import ProductsTab from './ProductsTab';
 import CategoriesTab from './CategoriesTab';
+import ImageFixer from './ImageFixer';
 
 import { getProducts, getCategories, addProduct, updateProduct, deleteProduct, addCategory, updateCategory, deleteCategory } from '../services/firebase';
 
@@ -517,6 +518,9 @@ const DashboardTab = ({ products, categories }) => {
       <h2 className="aggressive-text text-3xl text-white mb-6">
         DASHBOARD DE <span className="text-phenom-red">ADMINISTRACIÓN</span>
       </h2>
+      
+      {/* Corrector de Imágenes Firebase */}
+      <ImageFixer />
       
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

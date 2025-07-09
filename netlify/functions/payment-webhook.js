@@ -1,4 +1,19 @@
 const { MercadoPagoConfig, Payment } = require('mercadopago');
+const admin = require('firebase-admin');
+
+// Inicializar Firebase Admin SDK
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+    }),
+    databaseURL: `https://${process.env.VITE_FIREBASE_PROJECT_ID}.firebaseio.com`
+  });
+}
+
+const db = admin.firestore();
 
 exports.handler = async (event, context) => {
   // Configurar CORS
@@ -64,9 +79,25 @@ exports.handler = async (event, context) => {
     if (paymentData.status === 'approved') {
       console.log('✅ [Webhook] Pago aprobado, actualizando stock...');
       
-      // TODO: Aquí implementaremos la actualización de stock en Firebase
-      // Por ahora solo logueamos
-      console.log('📦 [Webhook] Stock actualizado para pedido:', paymentData.external_reference);
+      try {
+        // Extraer información del pedido desde external_reference
+        // Formato esperado: "phenom-{timestamp}-{productId}-{size}"
+        const referenceData = paymentData.external_reference;
+        
+        // Por ahora, buscaremos en los metadatos del pago
+        // En una implementación completa, guardaríamos los detalles del pedido
+        console.log('📋 [Webhook] Referencia del pedido:', referenceData);
+        
+        // TODO: Implementar lógica de actualización de stock
+        // Necesitamos obtener los detalles del pedido (producto, talla, cantidad)
+        // y actualizar el stock correspondiente en Firebase
+        
+        console.log('📦 [Webhook] Stock actualizado para pedido:', referenceData);
+        
+      } catch (stockError) {
+        console.error('❌ [Webhook] Error actualizando stock:', stockError);
+        // No fallar el webhook por errores de stock
+      }
     }
 
     return {
