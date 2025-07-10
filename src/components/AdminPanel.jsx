@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Package, LayoutGrid, Download, Eye, Save, Plus, Edit, Trash2, ArrowLeft, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
 import ProductsTab from './ProductsTab';
 import CategoriesTab from './CategoriesTab';
-import ImageFixer from './ImageFixer';
-import StorageRepair from './StorageRepair';
 import StorageCleanup from './StorageCleanup';
 
 import { getProducts, getCategories, addProduct, updateProduct, deleteProduct, addCategory, updateCategory, deleteCategory } from '../services/firebase';
@@ -574,17 +572,13 @@ const AdminPanel = ({ onBack }) => {
         {activeTab === 'storage' && (
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Herramientas de Storage</h2>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Reparación de Storage</h2>
               <p className="text-gray-600 mb-6">
-                Utiliza estas herramientas para diagnosticar y reparar problemas con las imágenes de Firebase Storage.
+                Diagnostica y repara problemas con las imágenes de Firebase Storage de forma inteligente.
               </p>
             </div>
             
             <StorageCleanup />
-            
-            <StorageRepair />
-            
-            <ImageFixer />
           </div>
         )}
         
