@@ -644,10 +644,6 @@ const DashboardTab = ({ products, categories }) => {
         DASHBOARD DE <span className="text-phenom-red">ADMINISTRACIÓN</span>
       </h2>
       
-      {/* Corrector de Imágenes Firebase */}
-      <ImageFixer />
-      
-      {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-phenom-black rounded-lg p-6 border border-gray-700">
           <div className="flex items-center">
