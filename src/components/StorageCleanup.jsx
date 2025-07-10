@@ -162,7 +162,7 @@ const StorageCleanup = () => {
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex items-center mb-4">
-        <Broom className="h-6 w-6 text-blue-600 mr-3" />
+        <Trash2 className="h-6 w-6 text-blue-600 mr-3" />
         <h3 className="text-xl font-bold text-gray-800">Limpieza Inteligente de Storage</h3>
       </div>
 
