@@ -1,0 +1,28 @@
+// Reglas de Firebase Storage recomendadas para solucionar problemas CORS y 404
+// Copia estas reglas en la consola de Firebase Storage
+
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Permitir lectura pública de todas las imágenes
+    match /{allPaths=**} {
+      allow read: if true;
+    }
+    
+    // Permitir escritura solo a usuarios autenticados
+    match /products/{allPaths=**} {
+      allow write: if request.auth != null;
+    }
+    
+    match /categories/{allPaths=**} {
+      allow write: if request.auth != null;
+    }
+  }
+}
+
+// INSTRUCCIONES:
+// 1. Ve a la consola de Firebase: https://console.firebase.google.com/
+// 2. Selecciona tu proyecto: phenom-boxing-store
+// 3. Ve a Storage > Rules
+// 4. Reemplaza las reglas actuales con las de arriba
+// 5. Haz clic en "Publicar"

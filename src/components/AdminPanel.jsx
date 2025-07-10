@@ -4,6 +4,7 @@ import ProductsTab from './ProductsTab';
 import CategoriesTab from './CategoriesTab';
 import ImageFixer from './ImageFixer';
 import StorageRepair from './StorageRepair';
+import StorageReset from './StorageReset';
 
 import { getProducts, getCategories, addProduct, updateProduct, deleteProduct, addCategory, updateCategory, deleteCategory } from '../services/firebase';
 
@@ -578,6 +579,8 @@ const AdminPanel = ({ onBack }) => {
                 Utiliza estas herramientas para diagnosticar y reparar problemas con las imágenes de Firebase Storage.
               </p>
             </div>
+            
+            <StorageReset />
             
             <StorageRepair />
             
