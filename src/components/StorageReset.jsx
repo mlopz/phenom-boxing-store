@@ -32,13 +32,18 @@ const StorageReset = () => {
         if (product.image) {
           console.log(`🧹 [Reset] Limpiando imagen de producto: ${product.name}`);
           
-          // Actualizar producto sin imagen
-          await updateDoc(doc(db, 'products', product.id), {
-            image: null
-          });
-          
-          cleanedCount++;
-          cleanedProducts.push(product.name);
+          try {
+            // Actualizar producto sin imagen
+            await updateDoc(doc(db, 'products', product.id), {
+              image: null
+            });
+            
+            cleanedCount++;
+            cleanedProducts.push(product.name);
+          } catch (error) {
+            console.warn(`⚠️ [Reset] No se pudo actualizar producto ${product.name}:`, error.message);
+            // Continuar con el siguiente producto
+          }
         }
       }
 
@@ -59,13 +64,18 @@ const StorageReset = () => {
         if (category.image) {
           console.log(`🧹 [Reset] Limpiando imagen de categoría: ${category.name}`);
           
-          // Actualizar categoría sin imagen
-          await updateDoc(doc(db, 'categories', category.id), {
-            image: null
-          });
-          
-          cleanedCategoriesCount++;
-          cleanedCategoriesList.push(category.name);
+          try {
+            // Actualizar categoría sin imagen
+            await updateDoc(doc(db, 'categories', category.id), {
+              image: null
+            });
+            
+            cleanedCategoriesCount++;
+            cleanedCategoriesList.push(category.name);
+          } catch (error) {
+            console.warn(`⚠️ [Reset] No se pudo actualizar categoría ${category.name}:`, error.message);
+            // Continuar con la siguiente categoría
+          }
         }
       }
 

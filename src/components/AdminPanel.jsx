@@ -4,7 +4,7 @@ import ProductsTab from './ProductsTab';
 import CategoriesTab from './CategoriesTab';
 import ImageFixer from './ImageFixer';
 import StorageRepair from './StorageRepair';
-import StorageReset from './StorageReset';
+import StorageCleanup from './StorageCleanup';
 
 import { getProducts, getCategories, addProduct, updateProduct, deleteProduct, addCategory, updateCategory, deleteCategory } from '../services/firebase';
 
@@ -580,7 +580,7 @@ const AdminPanel = ({ onBack }) => {
               </p>
             </div>
             
-            <StorageReset />
+            <StorageCleanup />
             
             <StorageRepair />
             
