@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Broom, AlertTriangle, RefreshCw, CheckCircle, Search } from 'lucide-react';
+import { Trash2, AlertTriangle, RefreshCw, CheckCircle, Search } from 'lucide-react';
 import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 
@@ -238,7 +238,7 @@ const StorageCleanup = () => {
                     </>
                   ) : (
                     <>
-                      <Broom className="h-5 w-5 mr-2" />
+                      <Trash2 className="w-5 h-5 mr-2" />
                       Limpiar Solo Referencias Problemáticas
                     </>
                   )}
