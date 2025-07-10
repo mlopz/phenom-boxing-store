@@ -3,6 +3,7 @@ import { Shield, Package, LayoutGrid, Download, Eye, Save, Plus, Edit, Trash2, A
 import ProductsTab from './ProductsTab';
 import CategoriesTab from './CategoriesTab';
 import ImageFixer from './ImageFixer';
+import StorageRepair from './StorageRepair';
 
 import { getProducts, getCategories, addProduct, updateProduct, deleteProduct, addCategory, updateCategory, deleteCategory } from '../services/firebase';
 
@@ -522,6 +523,16 @@ const AdminPanel = ({ onBack }) => {
             >
               Categorías
             </button>
+            <button
+              onClick={() => setActiveTab('storage')}
+              className={`py-4 px-2 border-b-2 font-medium text-sm ${
+                activeTab === 'storage'
+                  ? 'border-phenom-red text-phenom-red'
+                  : 'border-transparent text-gray-400 hover:text-white'
+              }`}
+            >
+              🔧 Storage
+            </button>
 
           </div>
         </div>
@@ -557,6 +568,21 @@ const AdminPanel = ({ onBack }) => {
             onSave={handleSaveCategory}
             onCancel={() => setEditingCategory(null)}
           />
+        )}
+        
+        {activeTab === 'storage' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Herramientas de Storage</h2>
+              <p className="text-gray-600 mb-6">
+                Utiliza estas herramientas para diagnosticar y reparar problemas con las imágenes de Firebase Storage.
+              </p>
+            </div>
+            
+            <StorageRepair />
+            
+            <ImageFixer />
+          </div>
         )}
         
       </div>

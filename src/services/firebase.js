@@ -417,6 +417,45 @@ const compressImage = (base64Data, quality = 0.8, maxWidth = 800) => {
 };
 
 /**
+ * Valida si una URL de Firebase Storage es accesible
+ * @param {string} url - URL a validar
+ * @returns {Promise<boolean>} true si la URL es accesible
+ */
+export const validateStorageUrl = async (url) => {
+  if (!url || typeof url !== 'string') {
+    return false;
+  }
+  
+  try {
+    const response = await fetch(url, { 
+      method: 'HEAD',
+      mode: 'cors'
+    });
+    return response.ok;
+  } catch (error) {
+    console.warn('⚠️ [Storage] URL no accesible:', url.substring(0, 80) + '...');
+    return false;
+  }
+};
+
+/**
+ * Regenera una URL de Firebase Storage desde una referencia
+ * @param {string} storagePath - Ruta del archivo en Storage (ej: 'products/imagen.jpg')
+ * @returns {Promise<string>} Nueva URL de descarga
+ */
+export const regenerateStorageUrl = async (storagePath) => {
+  try {
+    const imageRef = ref(storage, storagePath);
+    const downloadURL = await getDownloadURL(imageRef);
+    console.log(`✅ [Storage] URL regenerada para: ${storagePath}`);
+    return downloadURL;
+  } catch (error) {
+    console.error(`❌ [Storage] Error regenerando URL para ${storagePath}:`, error);
+    throw error;
+  }
+};
+
+/**
  * Sube una imagen a Firebase Storage y devuelve su URL de descarga
  * @param {string} base64Data - Imagen en formato base64 o data URL
  * @param {string} fileName - Nombre del archivo (se le agregará un prefijo único)
@@ -471,37 +510,59 @@ export const uploadImageToStorage = async (base64Data, fileName) => {
       throw new Error('El archivo debe ser una imagen (JPEG, PNG, etc.)');
     }
     
-    // 4. Crear referencia en Storage con nombre único
-    const fileExtension = safeFileName.split('.').pop() || 'jpg';
-    const uniqueFileName = `products/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExtension}`;
+    // 4. Crear referencia en Storage con nombre único y simple
+    const fileExtension = blob.type.split('/')[1] || 'jpg';
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 8);
+    const uniqueFileName = `products/${timestamp}_${randomId}.${fileExtension}`;
     const imageRef = ref(storage, uniqueFileName);
     
     console.log(`🔼 [Storage] Subiendo imagen: ${uniqueFileName} (${(blob.size / 1024).toFixed(2)} KB)`);
     
-    // 5. Configurar metadatos para optimización de caché (1 año)
+    // 5. Configurar metadatos optimizados
     const metadata = {
-      cacheControl: 'public, max-age=31536000', // 1 año
+      cacheControl: 'public, max-age=31536000',
       contentType: blob.type,
+      customMetadata: {
+        uploadedAt: new Date().toISOString(),
+        originalName: safeFileName
+      }
     };
     
     // 6. Subir el archivo a Firebase Storage
     const snapshot = await uploadBytes(imageRef, blob, metadata);
     
-    // 7. Obtener URL de descarga
-    const downloadURL = await getDownloadURL(snapshot.ref);
+    // 7. Obtener URL de descarga con reintentos
+    let downloadURL;
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    while (attempts < maxAttempts) {
+      try {
+        downloadURL = await getDownloadURL(snapshot.ref);
+        
+        // Validar que la URL sea accesible
+        const isValid = await validateStorageUrl(downloadURL);
+        if (isValid) {
+          break;
+        } else if (attempts === maxAttempts - 1) {
+          console.warn('⚠️ [Storage] URL generada pero no accesible inmediatamente');
+        }
+      } catch (urlError) {
+        console.warn(`⚠️ [Storage] Intento ${attempts + 1} fallido obteniendo URL:`, urlError.message);
+        if (attempts === maxAttempts - 1) {
+          throw urlError;
+        }
+      }
+      
+      attempts++;
+      if (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Esperar 1 segundo
+      }
+    }
     
     console.log('✅ [Storage] Imagen subida exitosamente');
     console.log(`🔗 [Storage] URL generada: ${downloadURL.substring(0, 80)}...`);
-    
-    // 8. Verificar accesibilidad de la URL (opcional, puede omitirse en producción)
-    try {
-      const testResponse = await fetch(downloadURL, { method: 'HEAD' });
-      if (!testResponse.ok) {
-        console.warn(`⚠️ [Storage] La URL generada no es accesible: ${testResponse.status}`);
-      }
-    } catch (testError) {
-      console.warn('⚠️ [Storage] No se pudo verificar la URL (puede ser normal):', testError.message);
-    }
     
     return downloadURL;
     
@@ -512,11 +573,13 @@ export const uploadImageToStorage = async (base64Data, fileName) => {
     let errorMessage = 'Error al subir la imagen';
     
     if (error.code === 'storage/unauthorized') {
-      errorMessage = 'No tienes permisos para subir imágenes';
+      errorMessage = 'No tienes permisos para subir imágenes. Verifica las reglas de Firebase Storage.';
     } else if (error.code === 'storage/canceled') {
       errorMessage = 'La subida de la imagen fue cancelada';
     } else if (error.code === 'storage/unknown') {
       errorMessage = 'Error desconocido al subir la imagen';
+    } else if (error.code === 'storage/quota-exceeded') {
+      errorMessage = 'Cuota de almacenamiento excedida';
     } else if (error.message) {
       errorMessage += `: ${error.message}`;
     }
