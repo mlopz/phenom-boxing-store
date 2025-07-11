@@ -1,8 +1,18 @@
 [
   {
-    "origin": ["*"],
-    "method": ["GET", "HEAD", "OPTIONS"],
+    "origin": [
+      "https://phenom-boxing-store.windsurf.build",
+      "http://localhost:5173",
+      "http://localhost:3000",
+      "*"
+    ],
+    "method": ["GET", "HEAD", "OPTIONS", "POST", "PUT"],
     "maxAgeSeconds": 3600,
-    "responseHeader": ["Content-Type", "Access-Control-Allow-Origin"]
+    "responseHeader": [
+      "Content-Type", 
+      "Access-Control-Allow-Origin",
+      "Access-Control-Allow-Methods",
+      "Access-Control-Allow-Headers"
+    ]
   }
 ]

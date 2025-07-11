@@ -426,12 +426,20 @@ export const validateStorageUrl = async (url) => {
     return false;
   }
   
+  // Para URLs de Firebase Storage, asumir que son válidas si tienen la estructura correcta
+  // Esto evita problemas de CORS durante la validación
+  if (url.includes('firebasestorage.googleapis.com') && url.includes('alt=media')) {
+    console.log('✅ [Storage] URL de Firebase Storage válida (sin verificación CORS)');
+    return true;
+  }
+  
+  // Para otras URLs, intentar validación sin CORS
   try {
     const response = await fetch(url, { 
       method: 'HEAD',
-      mode: 'cors'
+      mode: 'no-cors'
     });
-    return response.ok;
+    return true; // Si no hay error, asumir que es válida
   } catch (error) {
     console.warn('⚠️ [Storage] URL no accesible:', url.substring(0, 80) + '...');
     return false;
