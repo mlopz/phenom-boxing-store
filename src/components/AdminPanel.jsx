@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Package, LayoutGrid, Download, Eye, Save, Plus, Edit, Trash2, ArrowLeft, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
 import ProductsTab from './ProductsTab';
 import CategoriesTab from './CategoriesTab';
-import StorageCleanup from './StorageCleanup';
 
 import { getProducts, getCategories, addProduct, updateProduct, deleteProduct, addCategory, updateCategory, deleteCategory } from '../services/firebase';
 
@@ -522,16 +521,6 @@ const AdminPanel = ({ onBack }) => {
             >
               Categorías
             </button>
-            <button
-              onClick={() => setActiveTab('storage')}
-              className={`py-4 px-2 border-b-2 font-medium text-sm ${
-                activeTab === 'storage'
-                  ? 'border-phenom-red text-phenom-red'
-                  : 'border-transparent text-gray-400 hover:text-white'
-              }`}
-            >
-              🔧 Storage
-            </button>
 
           </div>
         </div>
@@ -567,19 +556,6 @@ const AdminPanel = ({ onBack }) => {
             onSave={handleSaveCategory}
             onCancel={() => setEditingCategory(null)}
           />
-        )}
-        
-        {activeTab === 'storage' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Reparación de Storage</h2>
-              <p className="text-gray-600 mb-6">
-                Diagnostica y repara problemas con las imágenes de Firebase Storage de forma inteligente.
-              </p>
-            </div>
-            
-            <StorageCleanup />
-          </div>
         )}
         
       </div>
