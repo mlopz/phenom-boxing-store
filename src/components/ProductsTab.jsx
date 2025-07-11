@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Plus, Edit, Trash2, Save, X, Search, Package, Eye, Upload, Image } from 'lucide-react';
 import { uploadImageToStorage, storage } from '../services/firebase';
 import { ref, deleteObject } from 'firebase/storage';
-import { debugFirebaseConfig, testStorageConnection } from '../utils/firebaseDebug';
 
 const ProductsTab = ({ 
   products, 
@@ -17,23 +16,6 @@ const ProductsTab = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
-
-  // Debug de Firebase al cargar el componente
-  useEffect(() => {
-    console.log('🔧 [ProductsTab] Ejecutando diagnóstico de Firebase...');
-    const configOk = debugFirebaseConfig();
-    
-    if (configOk) {
-      // Solo probar Storage si la configuración está bien
-      testStorageConnection().then(storageOk => {
-        if (storageOk) {
-          console.log('✅ [ProductsTab] Firebase Storage está funcionando correctamente');
-        } else {
-          console.error('❌ [ProductsTab] Hay problemas con Firebase Storage');
-        }
-      });
-    }
-  }, []);
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
