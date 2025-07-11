@@ -219,11 +219,15 @@ const ProductForm = ({ product, categories, onSave, onCancel, showNotification }
       // Crear objeto de producto con las URLs procesadas
       const productData = {
         ...formData,
-        id: product.id, // ✅ CRÍTICO: Preservar el ID para edición
         features: formData.features.split(',').map(f => f.trim()).filter(f => f),
         image: processedImages[0] || '', // Mantener compatibilidad con imagen principal
         images: processedImages // Usar las URLs procesadas
       };
+      
+      // Solo incluir el ID si existe (para edición de productos existentes)
+      if (product.id) {
+        productData.id = product.id;
+      }
       
       console.log('✅ [DEBUG] Producto procesado para guardar:', productData);
       
