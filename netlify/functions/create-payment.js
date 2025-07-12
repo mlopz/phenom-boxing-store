@@ -1,6 +1,4 @@
-import { MercadoPagoConfig, Preference } from 'mercadopago';
-
-export const handler = async (event, context) => {
+exports.handler = async (event, context) => {
   // Configurar CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -26,17 +24,22 @@ export const handler = async (event, context) => {
   }
 
   try {
+    // Log básico para debug
+    console.log('🚀 [Netlify Function] Iniciando creación de preferencia');
+    
     // Validar variables de entorno
-    console.log('🔍 [Netlify Function] Variables de entorno:', {
-      hasAccessToken: !!process.env.VITE_MERCADOPAGO_ACCESS_TOKEN,
-      accessTokenLength: process.env.VITE_MERCADOPAGO_ACCESS_TOKEN?.length,
-      environment: process.env.VITE_MERCADOPAGO_ENVIRONMENT,
-      siteUrl: process.env.VITE_SITE_URL
-    });
-
-    if (!process.env.VITE_MERCADOPAGO_ACCESS_TOKEN) {
-      throw new Error('VITE_MERCADOPAGO_ACCESS_TOKEN no está configurado');
+    const accessToken = process.env.VITE_MERCADOPAGO_ACCESS_TOKEN;
+    if (!accessToken) {
+      console.error('❌ Access Token no configurado');
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ error: 'Configuración de MercadoPago incompleta' })
+      };
     }
+
+    // Importar MercadoPago dentro del try-catch
+    const { MercadoPagoConfig, Preference } = require('mercadopago');
 
     // Configurar MercadoPago
     const client = new MercadoPagoConfig({
