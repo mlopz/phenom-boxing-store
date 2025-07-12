@@ -57,7 +57,7 @@ const Checkout = ({ isOpen, onClose }) => {
           title: item.name,
           description: `${item.name} - Phenom Boxing Store`,
           quantity: item.quantity,
-          unit_price: item.price
+          unit_price: Number(item.price)
         })),
         payer: {
           name: formData.firstName,

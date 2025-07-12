@@ -66,7 +66,7 @@ function AppContent() {
         items: orderData.items.map(item => ({
           title: `${item.name}${item.selectedSize ? ` (${item.selectedSize})` : ''}`,
           quantity: item.quantity,
-          unit_price: item.price
+          unit_price: Number(item.price)
         })),
         deliveryInfo: {
           type: orderData.deliveryType,
