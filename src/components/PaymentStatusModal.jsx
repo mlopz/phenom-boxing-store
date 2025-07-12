@@ -79,6 +79,14 @@ export default function PaymentStatusModal({ open, status, onClose }) {
           >
             Volver a la tienda
           </button>
+          {status === 'failure' && (
+            <a
+              href="/"
+              className="mt-4 inline-block text-sm text-blue-700 underline hover:text-blue-900 transition"
+            >
+              ¿Ves el mensaje ‘No puedes pagarte a ti mismo’? Haz click aquí para volver manualmente a la tienda principal.
+            </a>
+          )}
         </div>
       </div>
     </>
