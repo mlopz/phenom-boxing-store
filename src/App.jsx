@@ -12,8 +12,12 @@ import Footer from './components/Footer';
 import AdminPanel from './components/AdminPanel';
 import WhatsAppButton from './components/WhatsAppButton';
 import CatalogLoader from './components/CatalogLoader';
+import PaymentStatusModal from './components/PaymentStatusModal';
 
 // Componente interno con acceso al contexto del carrito
+import { useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+
 function AppContent() {
   const { items, getCartTotal } = useCart();
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -23,6 +27,29 @@ function AppContent() {
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [orderData, setOrderData] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentModalStatus, setPaymentModalStatus] = useState(null);
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const paymentStatus = params.get('payment');
+    if (paymentStatus) {
+      setPaymentModalStatus(paymentStatus);
+      setShowPaymentModal(true);
+    }
+  }, [location]);
+
+  const handleClosePaymentModal = () => {
+    setShowPaymentModal(false);
+    setPaymentModalStatus(null);
+    // Limpiar el parámetro de la URL después de cerrar el modal
+    const params = new URLSearchParams(location.search);
+    params.delete('payment');
+    navigate({ search: params.toString() }, { replace: true });
+  };
 
   const handleCartClick = () => {
     setIsCartOpen(true);
@@ -293,6 +320,12 @@ function AppContent() {
       
       {/* WhatsApp Floating Button */}
       <WhatsAppButton />
+      {/* Modal de pago */}
+      <PaymentStatusModal
+        open={showPaymentModal}
+        status={paymentModalStatus}
+        onClose={handleClosePaymentModal}
+      />
     </div>
   );
 }
