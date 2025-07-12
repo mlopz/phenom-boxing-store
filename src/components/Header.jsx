@@ -13,19 +13,19 @@ const Header = ({ onCartClick, onMenuClick, onAdminClick }) => {
   };
 
   return (
-    <header className="bg-cream-white border-b-4 border-primary-red sticky top-0 z-50 shadow-lg">
+    <header className="bg-phenom-black border-b-4 border-phenom-red sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center space-x-3">
-            <div className="bg-retro-red p-2 rounded-xl border-2 border-black flex items-center justify-center shadow-md">
-              <Zap className="h-8 w-8 text-cream" />
+            <div className="bg-gradient-red p-2 rounded-lg pulse-glow">
+              <Zap className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h1 className="text-4xl font-spartan font-extrabold text-primary-red tracking-tight leading-none drop-shadow heading">
+              <h1 className="aggressive-text text-3xl text-white text-shadow">
                 PHENOM
               </h1>
-              <p className="text-industrial text-xs font-bold tracking-widest uppercase mt-1">
+              <p className="text-phenom-red text-xs font-semibold tracking-wider">
                 DEPORTE • BIENESTAR • RECUPERACIÓN
               </p>
             </div>
@@ -33,10 +33,10 @@ const Header = ({ onCartClick, onMenuClick, onAdminClick }) => {
 
           {/* Navigation Desktop */}
           <nav className="hidden md:flex items-center space-x-8">
-            <a href="#inicio" className="btn-retro-outline text-base">
+            <a href="#inicio" className="text-white hover:text-phenom-red transition-colors font-semibold tracking-wide">
               INICIO
             </a>
-            <a href="#productos" className="btn-retro-outline text-base">
+            <a href="#productos" className="text-white hover:text-phenom-red transition-colors font-semibold tracking-wide">
               PRODUCTOS
             </a>
             <a href="#categorias" className="text-white hover:text-phenom-red transition-colors font-semibold tracking-wide">

@@ -3,40 +3,40 @@ import { Zap, Facebook, Instagram, Twitter, Youtube, Mail, Phone, MapPin } from 
 
 const Footer = () => {
   return (
-    <footer className="bg-cream-white border-t-4 border-primary-red shadow-inner">
+    <footer className="bg-phenom-black border-t-4 border-phenom-red">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           
           {/* Brand Section */}
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
-              <div className="bg-retro-red p-2 rounded-xl border-2 border-black flex items-center justify-center shadow-md">
-                <Zap className="h-6 w-6 text-cream" />
+              <div className="bg-gradient-red p-2 rounded-lg pulse-glow">
+                <Zap className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h3 className="text-2xl font-spartan font-extrabold text-primary-red tracking-tight leading-none drop-shadow heading">
+                <h3 className="aggressive-text text-2xl text-white text-shadow">
                   PHENOM
                 </h3>
-                <p className="text-industrial text-xs font-bold tracking-widest uppercase mt-1">
+                <p className="text-phenom-red text-xs font-semibold tracking-wider">
                   DEPORTE • BIENESTAR • RECUPERACIÓN
                 </p>
               </div>
             </div>
-            <p className="text-industrial text-sm font-medium">
+            <p className="text-gray-400 text-sm">
               Tu tienda especializada en deportes de combate, medicina alternativa y recuperación deportiva. 
               Productos premium para atletas y personas que buscan bienestar integral.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="btn-retro-outline p-2 rounded-full border-2 border-primary-red hover:bg-retro-red hover:text-cream transition-colors">
+              <a href="#" className="text-gray-400 hover:text-phenom-red transition-colors">
                 <Facebook className="h-5 w-5" />
               </a>
-              <a href="#" className="btn-retro-outline p-2 rounded-full border-2 border-primary-red hover:bg-retro-red hover:text-cream transition-colors">
+              <a href="#" className="text-gray-400 hover:text-phenom-red transition-colors">
                 <Instagram className="h-5 w-5" />
               </a>
-              <a href="#" className="btn-retro-outline p-2 rounded-full border-2 border-primary-red hover:bg-retro-red hover:text-cream transition-colors">
+              <a href="#" className="text-gray-400 hover:text-phenom-red transition-colors">
                 <Twitter className="h-5 w-5" />
               </a>
-              <a href="#" className="btn-retro-outline p-2 rounded-full border-2 border-primary-red hover:bg-retro-red hover:text-cream transition-colors">
+              <a href="#" className="text-gray-400 hover:text-phenom-red transition-colors">
                 <Youtube className="h-5 w-5" />
               </a>
             </div>
@@ -134,13 +134,13 @@ const Footer = () => {
               © 2024 Phenom. Todos los derechos reservados.
             </div>
             <div className="flex space-x-6 text-sm">
-              <a href="#" className="btn-retro-outline p-2 rounded-full border-2 border-primary-red hover:bg-retro-red hover:text-cream transition-colors">
+              <a href="#" className="text-gray-400 hover:text-phenom-red transition-colors">
                 Política de Privacidad
               </a>
-              <a href="#" className="btn-retro-outline p-2 rounded-full border-2 border-primary-red hover:bg-retro-red hover:text-cream transition-colors">
+              <a href="#" className="text-gray-400 hover:text-phenom-red transition-colors">
                 Términos y Condiciones
               </a>
-              <a href="#" className="btn-retro-outline p-2 rounded-full border-2 border-primary-red hover:bg-retro-red hover:text-cream transition-colors">
+              <a href="#" className="text-gray-400 hover:text-phenom-red transition-colors">
                 Política de Devoluciones
               </a>
             </div>

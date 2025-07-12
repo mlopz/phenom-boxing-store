@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=League+Spartan:wght@700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -11,29 +11,11 @@
 }
 
 body {
-  font-family: 'League Spartan', 'Montserrat', 'Oswald', Arial, sans-serif;
-  background-color: #F8F5F1;
-  color: #000;
+  font-family: 'Oswald', sans-serif;
+  background-color: #111827;
+  color: white;
   overflow-x: hidden;
-  min-height: 100vh;
-  letter-spacing: 0.01em;
 }
-
-h1, h2, h3, h4, h5, h6, .heading {
-  font-family: 'League Spartan', 'Montserrat', 'Oswald', Arial, sans-serif;
-  font-weight: 900;
-  letter-spacing: 0.01em;
-}
-
-strong, b {
-  font-family: 'League Spartan', 'Montserrat', 'Oswald', Arial, sans-serif;
-  font-weight: 900;
-}
-
-input, textarea, select, button {
-  font-family: 'League Spartan', 'Montserrat', 'Oswald', Arial, sans-serif;
-}
-
 
 .aggressive-text {
   font-family: 'Bebas Neue', cursive;
@@ -42,82 +24,8 @@ input, textarea, select, button {
 }
 
 .gradient-red {
-  background: linear-gradient(135deg, #E31B1B 0%, #B31313 100%);
+  background: linear-gradient(135deg, #DC2626 0%, #991B1B 100%);
 }
-
-.btn-retro {
-  background: #E31B1B;
-  color: #F8F5F1;
-  border: 2px solid #000;
-  border-radius: 0.5rem;
-  font-family: 'League Spartan', 'Montserrat', 'Oswald', Arial, sans-serif;
-  font-weight: 900;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  box-shadow: 0 2px 0 #000, 0 4px 12px rgba(0,0,0,0.12);
-  transition: background 0.2s, color 0.2s, transform 0.1s;
-  padding: 0.75em 2em;
-  display: inline-block;
-}
-.btn-retro:hover, .btn-retro:focus {
-  background: #000;
-  color: #E31B1B;
-  border-color: #E31B1B;
-  transform: translateY(-2px) scale(1.03);
-}
-
-.btn-retro-outline {
-  background: transparent;
-  color: #E31B1B;
-  border: 2px solid #E31B1B;
-  border-radius: 0.5rem;
-  font-family: 'League Spartan', 'Montserrat', 'Oswald', Arial, sans-serif;
-  font-weight: 900;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  box-shadow: none;
-  transition: background 0.2s, color 0.2s, border 0.2s, transform 0.1s;
-  padding: 0.75em 2em;
-  display: inline-block;
-}
-.btn-retro-outline:hover, .btn-retro-outline:focus {
-  background: #E31B1B;
-  color: #F8F5F1;
-  border-color: #000;
-  transform: translateY(-2px) scale(1.03);
-}
-
-.bg-industrial {
-  background: repeating-linear-gradient(135deg, #888 0 2px, #F8F5F1 2px 24px);
-}
-
-.card-retro {
-  background: #fff;
-  border: 2.5px solid #000;
-  border-radius: 1rem;
-  box-shadow: 0 3px 0 #E31B1B, 0 8px 24px rgba(0,0,0,0.10);
-  padding: 1.5em;
-  margin-bottom: 1.5em;
-}
-
-.text-cream {
-  color: #F8F5F1;
-}
-.text-industrial {
-  color: #888;
-}
-.bg-cream {
-  background: #F8F5F1;
-}
-.bg-retro-black {
-  background: #000;
-  color: #F8F5F1;
-}
-.bg-retro-red {
-  background: #E31B1B;
-  color: #F8F5F1;
-}
-
 
 .gradient-dark {
   background: linear-gradient(135deg, #1F2937 0%, #111827 100%);

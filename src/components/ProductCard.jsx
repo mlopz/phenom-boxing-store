@@ -60,7 +60,10 @@ const ProductCard = ({ product }) => {
 
   return (
     <>
-      <div className="relative group cursor-pointer select-none card-retro shadow-lg hover:shadow-2xl transition-transform duration-150 hover:scale-105" onClick={handleProductClick}>
+      <div 
+        className="bg-phenom-dark rounded-lg overflow-hidden shadow-lg hover-scale transition-all duration-300 border border-gray-700 hover:border-phenom-red group cursor-pointer h-full flex flex-col"
+        onClick={handleProductClick}
+      >
         {/* Product Image Gallery */}
         <div className="relative overflow-hidden" style={{ position: 'relative', zIndex: 1 }}>
           <img
@@ -74,14 +77,14 @@ const ProductCard = ({ product }) => {
             <>
               <button
                 onClick={prevImage}
-                className="absolute left-2 top-1/2 transform -translate-y-1/2 btn-retro-outline p-1 rounded-full z-10"
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-phenom-red hover:bg-red-700 text-white p-2 rounded-full transition-all z-30 cursor-pointer shadow-lg"
                 style={{ pointerEvents: 'auto' }}
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
               <button
                 onClick={nextImage}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 btn-retro-outline p-1 rounded-full z-10"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-phenom-red hover:bg-red-700 text-white p-2 rounded-full transition-all z-30 cursor-pointer shadow-lg"
                 style={{ pointerEvents: 'auto' }}
               >
                 <ChevronRight className="h-5 w-5" />
@@ -117,7 +120,9 @@ const ProductCard = ({ product }) => {
 
         {/* Product Info */}
         <div className="p-6 flex flex-col flex-grow">
-          <h3 className="text-xl font-spartan font-extrabold text-primary-red group-hover:text-black transition-colors heading mb-1">{product.name}</h3>
+          <h3 className="aggressive-text text-xl text-white mb-2 group-hover:text-phenom-red transition-colors">
+            {product.name}
+          </h3>
           
           <p className="text-gray-400 text-sm mb-4 line-clamp-2">
             {product.description}
@@ -153,15 +158,24 @@ const ProductCard = ({ product }) => {
           </div>
 
           {/* Add to Cart Button - Alineado al final */}
-          <button
-            className="mt-3 w-full btn-retro text-lg flex items-center justify-center gap-2"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleAddToCart();
-            }}
-          >
-            <ShoppingCart className="inline-block -mt-1" /> Agregar al carrito
-          </button>
+          <div className="mt-auto">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleAddToCart();
+              }}
+              disabled={!product.inStock}
+              className={`w-full py-3 px-4 rounded-lg font-bold text-white transition-all flex items-center justify-center space-x-2 ${
+                product.inStock
+                  ? 'bg-gradient-red hover:shadow-lg hover-scale pulse-glow'
+                  : 'bg-gray-600 cursor-not-allowed'
+              }`}
+            >
+              <ShoppingCart className="h-5 w-5" />
+              <span>{product.inStock ? 'AGREGAR AL CARRITO' : 'AGOTADO'}</span>
+            </button>
+          </div>
         </div>
       </div>
       
@@ -182,7 +196,7 @@ const ProductCard = ({ product }) => {
             
             {/* Información del producto */}
             <div className="mb-6">
-              <span className="text-primary-red font-extrabold text-2xl">${product.price}</span>
+              <h4 className="text-white font-semibold text-lg mb-1">{product.name}</h4>
               <p className="text-gray-400">${product.price}</p>
               {product.sizeStock && (
                 <p className="text-gray-500 text-sm mt-1">
