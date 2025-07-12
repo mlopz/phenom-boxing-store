@@ -84,7 +84,7 @@ const Checkout = ({ isOpen, onClose }) => {
       };
 
       // Crear preferencia de pago
-      const response = await fetch('http://localhost:3001/api/create-preference', {
+      const response = await fetch('/.netlify/functions/create-payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
