@@ -16,5 +16,7 @@ module.exports = {
   plugins: ['react-refresh'],
   rules: {
     'react-refresh/only-export-components': 'warn',
+    // El proyecto no usa PropTypes ni TypeScript; la regla generaba 162 errores de ruido.
+    'react/prop-types': 'off',
   },
 };
